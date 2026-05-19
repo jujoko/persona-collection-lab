@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import { env, pipeline } from "@xenova/transformers";
+import { insertCharacter, insertSimulation, insertFeedback, exportAll } from "./db.mjs";
 
 const rootDir = fileURLToPath(new URL(".", import.meta.url));
 const port = Number(process.env.PORT || 8787);
@@ -89,13 +90,48 @@ async function serveStatic(request, response) {
   }
 }
 
+async function handleData(request, response, inserter) {
+  try {
+    const body = await readRequestJson(request);
+    await inserter(body);
+    sendJson(response, 200, { ok: true });
+  } catch (error) {
+    sendJson(response, 500, { ok: false, error: error?.message || String(error) });
+  }
+}
+
 const server = createServer(async (request, response) => {
   if (request.method === "OPTIONS") {
     sendJson(response, 204, {});
     return;
   }
+  if (request.method === "GET" && request.url === "/api/health") {
+    sendJson(response, 200, { ok: true });
+    return;
+  }
+  if (request.method === "GET" && request.url === "/api/export") {
+    try {
+      const data = await exportAll();
+      sendJson(response, 200, data);
+    } catch (error) {
+      sendJson(response, 500, { ok: false, error: error?.message || String(error) });
+    }
+    return;
+  }
   if (request.method === "POST" && request.url === "/api/embed") {
     await embedText(request, response);
+    return;
+  }
+  if (request.method === "POST" && request.url === "/api/characters") {
+    await handleData(request, response, insertCharacter);
+    return;
+  }
+  if (request.method === "POST" && request.url === "/api/simulations") {
+    await handleData(request, response, insertSimulation);
+    return;
+  }
+  if (request.method === "POST" && request.url === "/api/feedback") {
+    await handleData(request, response, insertFeedback);
     return;
   }
   if (request.method === "GET") {

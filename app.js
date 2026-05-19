@@ -43,6 +43,18 @@ function saveState() {
   renderDataset();
 }
 
+async function syncToServer(type, data) {
+  try {
+    await fetch(`/api/${type}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+  } catch {
+    // 서버 없으면 무시 — localStorage에는 이미 저장됨
+  }
+}
+
 function ensureNeuralModel(character) {
   const schema = PersonaEngine.getPersonaStructurePrior(character);
   if (!state.neural_model || state.neural_model.schema_id !== schema.schema_id) {
@@ -129,6 +141,8 @@ async function runSimulation(character) {
     state.characters.push(character);
     state.simulations.push(simulation);
     saveState();
+    syncToServer("characters", character);
+    syncToServer("simulations", simulation);
     renderSimulation(simulation);
   } finally {
     submitBtn.textContent = originalSubmitText;
@@ -535,6 +549,7 @@ resultList.addEventListener("click", event => {
   renderLatentBars(after, simulation.persona_structure_prior.latent_dimensions);
   drawNetwork(after, simulation.latent_edges, simulation.persona_structure_prior.latent_dimensions);
   saveState();
+  syncToServer("feedback", feedback);
 });
 
 document.addEventListener("click", event => {
