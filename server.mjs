@@ -94,8 +94,10 @@ async function handleData(request, response, inserter) {
   try {
     const body = await readRequestJson(request);
     await inserter(body);
+    console.log(`[DB] ${request.url} ok`);
     sendJson(response, 200, { ok: true });
   } catch (error) {
+    console.error(`[DB] ${request.url} error:`, error?.message || error);
     sendJson(response, 500, { ok: false, error: error?.message || String(error) });
   }
 }
