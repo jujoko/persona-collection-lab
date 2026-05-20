@@ -925,6 +925,143 @@
     return normalize(updated);
   }
 
+  // ─── M2 단계별 실행을 위한 함수들 ───────────────────────────────────────────
+  // M2가 행동을 직접 결정하는 구조에서 사용한다.
+  // PersonaEngine은 선택지(choices)와 구조 데이터를 제공하고,
+  // M2가 어떤 선택지를 고를지 결정한 뒤 엔진이 latent를 업데이트한다.
+
+  /**
+   * Growth Phase 한 이벤트에 대한 M2 호출 컨텍스트를 반환한다.
+   * M2는 adaptations 중 하나를 고른다.
+   */
+  function buildGrowthStep(event, currentLatent, structurePrior) {
+    const dims = structurePrior.latent_dimension;
+    const latentHighlights = currentLatent
+      .map((value, index) => ({ dim: `z${index}`, value }))
+      .sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
+      .slice(0, 3)
+      .map(({ dim, value }) =>
+        `${dim}: ${value > 0 ? "+" : ""}${value.toFixed(2)} (${Math.abs(value) > 0.5 ? "강함" : "약함"}, ${value > 0 ? "양" : "음"})`
+      )
+      .join(", ");
+    return {
+      event_id: event.id,
+      event_title: event.title,
+      event_summary: event.summary,
+      adaptations: event.adaptations.map(adaptation => ({ id: adaptation.id, label: adaptation.label })),
+      latent_highlights: latentHighlights,
+      dims
+    };
+  }
+
+  /**
+   * M2가 고른 adaptation_id를 엔진에 반영한다.
+   * latent 업데이트 + log 템플릿을 반환한다.
+   * summary, rationale은 M2가 제공한 값으로 채워넣는다.
+   */
+  function applyAdaptationResult(adaptationId, currentLatent, event, structurePrior, character) {
+    const dims = structurePrior.latent_dimension;
+    const adaptation = event.adaptations.find(a => a.id === adaptationId)
+      || event.adaptations[0]; // fallback: 첫 번째 선택지
+    const adaptationEmbedding = fitEmbedding(adaptation.embedding, dims, adaptation.id);
+    const eventEmbedding = fitEmbedding(event.event_embedding, dims, event.id);
+    const before = [...currentLatent];
+    const receptivity = 0.14 + Math.max(0, dot(currentLatent, eventEmbedding)) * 0.05;
+    const updated = currentLatent.map((value, index) => {
+      const inertia = value * 0.88;
+      const environmentalImpact = adaptationEmbedding[index] * receptivity;
+      return clamp(inertia + environmentalImpact);
+    });
+    const newLatent = normalize(updated);
+    const evidence = findEvidenceByEmbedding(characterText(character), adaptationEmbedding, adaptation.cueWords);
+    return {
+      newLatent,
+      logTemplate: {
+        model_id: MODEL_REGISTRY.persona_to_prompt_model.id,
+        based_on_model: structurePrior.model_id,
+        event_id: event.id,
+        phase: event.phase,
+        event_title: event.title,
+        event_summary: event.summary,
+        event_embedding: eventEmbedding,
+        adaptation: adaptation.id,
+        adaptation_label: adaptation.label,
+        adaptation_embedding: adaptationEmbedding,
+        latent_before: before,
+        latent_after: newLatent,
+        prompt_evidence: evidence.text,
+        prompt_evidence_score: evidence.evidence_score
+        // summary, rationale: M2가 채운다
+      }
+    };
+  }
+
+  /**
+   * World Event 한 이벤트에 대한 M2 호출 컨텍스트를 반환한다.
+   * M2는 actions 중 하나를 고른다.
+   */
+  function buildWorldStep(event, currentLatent) {
+    const latentHighlights = currentLatent
+      .map((value, index) => ({ dim: `z${index}`, value }))
+      .sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
+      .slice(0, 3)
+      .map(({ dim, value }) =>
+        `${dim}: ${value > 0 ? "+" : ""}${value.toFixed(2)} (${Math.abs(value) > 0.5 ? "강함" : "약함"}, ${value > 0 ? "양" : "음"})`
+      )
+      .join(", ");
+    return {
+      event_id: event.id,
+      event_title: event.title,
+      event_summary: event.summary,
+      actions: event.actions.map(action => ({ id: action.id, label: action.label })),
+      latent_highlights: latentHighlights
+    };
+  }
+
+  /**
+   * M2가 고른 action_id를 엔진에 반영한다.
+   * endingWeight 누적용 데이터와 이벤트 결과 템플릿을 반환한다.
+   * outcome, rationale은 M2가 제공한 값으로 채워넣는다.
+   */
+  function applyActionResult(actionId, currentLatent, event, structurePrior) {
+    const dims = currentLatent.length;
+    const action = event.actions.find(a => a.id === actionId)
+      || chooseAction(event, currentLatent, structurePrior); // fallback: 룰 기반
+    const actionEmbedding = fitEmbedding(action.embedding, dims, action.id);
+    return {
+      endingWeight: action.endingWeight,
+      eventTemplate: {
+        event_id: event.id,
+        model_id: MODEL_REGISTRY.persona_to_prompt_model.id,
+        based_on_model: structurePrior.model_id,
+        event_type: event.type,
+        event_title: event.title,
+        event_summary: event.summary,
+        event_embedding: event.event_embedding,
+        action: action.id,
+        action_label: action.label,
+        action_embedding: actionEmbedding,
+        ending_flag: false
+        // outcome, rationale: M2가 채운다
+      }
+    };
+  }
+
+  /**
+   * M2 시뮬레이션의 초기 컨텍스트를 빌드한다 (M3 + M1).
+   * Growth/World 루프를 돌기 전에 호출한다.
+   */
+  function buildSimulationContext(character, neuralModel = null) {
+    const structurePrior = getPersonaStructurePrior(character);
+    const compatibleModel = isCompatibleModel(neuralModel, structurePrior) ? neuralModel : null;
+    const promptInterpretation = interpretPromptToPersona(character, structurePrior, compatibleModel);
+    return {
+      structurePrior,
+      promptInterpretation,
+      infantLatent: promptInterpretation.infant_latent_persona
+    };
+  }
+
   return {
     LATENT_DIMS,
     MODEL_REGISTRY,
@@ -943,6 +1080,12 @@
     updateLatentWithFeedback,
     simulateWorldEvents,
     simulate,
+    scoreEnding,
+    buildSimulationContext,
+    buildGrowthStep,
+    applyAdaptationResult,
+    buildWorldStep,
+    applyActionResult,
     hashText
   };
 });

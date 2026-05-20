@@ -43,35 +43,19 @@ function saveState() {
   renderDataset();
 }
 
-async function enhanceWithNarration(simulation) {
-  const developmentSummary = simulation.developmental_logs.map(log => log.adaptation_label);
-  await Promise.all(simulation.events.map(async event => {
-    const target = document.querySelector(`[data-narrate-target="${simulation.character_id}-${event.event_id}"]`);
-    if (!target) return;
-    target.textContent = "서술 생성 중…";
-    try {
-      const response = await fetch("/api/narrate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          character_prompt: simulation.character.prompt,
-          development_summary: developmentSummary,
-          event_title: event.event_title,
-          event_summary: event.event_summary,
-          action_label: event.action_label,
-          latent_vector: simulation.latent_persona
-        })
-      });
-      const data = await response.json();
-      if (data.ok && data.narration) {
-        target.textContent = data.narration;
-      } else {
-        target.textContent = event.rationale;
-      }
-    } catch {
-      target.textContent = event.rationale;
-    }
-  }));
+async function callDecide(type, payload) {
+  try {
+    const response = await fetch("/api/decide", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type, ...payload })
+    });
+    const data = await response.json();
+    if (data.ok && data.result) return data.result;
+  } catch {
+    // 서버 없거나 실패 → null 반환, 호출부에서 엔진 fallback
+  }
+  return null;
 }
 
 async function syncToServer(type, data) {
@@ -153,8 +137,10 @@ function getFormCharacter() {
 async function runSimulation(character) {
   submitBtn.disabled = true;
   const originalSubmitText = submitBtn.textContent;
-  submitBtn.textContent = "문장 임베딩 모델 실행 중";
+
   try {
+    // ── 임베딩 ──────────────────────────────────────────────────────────────
+    submitBtn.textContent = "임베딩 모델 실행 중";
     const embeddingPayload = await fetchPromptEmbedding(character.prompt);
     if (embeddingPayload) {
       character.external_embedding = embeddingPayload.embedding;
@@ -167,7 +153,11 @@ async function runSimulation(character) {
     }
 
     const neuralModel = ensureNeuralModel(character);
-    const simulation = PersonaEngine.simulate(character, null, neuralModel);
+
+    // ── M2 결정 모드 시도 ────────────────────────────────────────────────────
+    submitBtn.textContent = "M2 시뮬레이션 실행 중";
+    const simulation = await runSimulationWithM2(character, neuralModel);
+
     simulation.baseline_events = simulation.events.map(event => ({ ...event }));
     state.characters.push(character);
     state.simulations.push(simulation);
@@ -175,11 +165,107 @@ async function runSimulation(character) {
     syncToServer("characters", character);
     syncToServer("simulations", simulation);
     renderSimulation(simulation);
-    enhanceWithNarration(simulation);
   } finally {
     submitBtn.textContent = originalSubmitText;
     submitBtn.disabled = false;
   }
+}
+
+async function runSimulationWithM2(character, neuralModel) {
+  // M3 + M1: 잠재 공간 구조 및 초기 벡터 계산
+  const { structurePrior, promptInterpretation, infantLatent } =
+    PersonaEngine.buildSimulationContext(character, neuralModel);
+
+  let latent = [...infantLatent];
+  const developmentalLogs = [];
+  const developmentLabels = []; // Growth 결과 레이블 (World 프롬프트용)
+
+  // ── Growth Phase ────────────────────────────────────────────────────────────
+  for (const event of PersonaEngine.DEVELOPMENT_EVENTS) {
+    const step = PersonaEngine.buildGrowthStep(event, latent, structurePrior);
+
+    // M2 호출
+    const m2 = await callDecide("growth", {
+      character_prompt: character.prompt,
+      latent_vector: latent,
+      event_title: step.event_title,
+      event_summary: step.event_summary,
+      adaptations: step.adaptations
+    });
+
+    // M2 성공 → 그 id로 엔진 반영 / 실패 → 엔진 룰 기반 fallback
+    const adaptationId = m2?.adaptation_id ?? null;
+    const { newLatent, logTemplate } = PersonaEngine.applyAdaptationResult(
+      adaptationId, latent, event, structurePrior, character
+    );
+    latent = newLatent;
+
+    developmentalLogs.push({
+      ...logTemplate,
+      adaptation_label: m2?.adaptation_label ?? logTemplate.adaptation_label,
+      summary: m2?.summary ?? event.adaptations.find(a => a.id === logTemplate.adaptation)?.summary ?? "",
+      rationale: m2?.rationale ?? `"${logTemplate.prompt_evidence}" 부분이 작용했다.`
+    });
+    developmentLabels.push(m2?.adaptation_label ?? logTemplate.adaptation_label);
+  }
+
+  const latentEdges = PersonaEngine.inferLatentEdges(latent);
+  const endingScores = {};
+
+  // ── World Events ─────────────────────────────────────────────────────────────
+  const eventResults = [];
+  for (const event of PersonaEngine.EVENTS) {
+    const step = PersonaEngine.buildWorldStep(event, latent);
+
+    const m2 = await callDecide("world", {
+      character_prompt: character.prompt,
+      development_summary: developmentLabels,
+      latent_vector: latent,
+      event_title: step.event_title,
+      event_summary: step.event_summary,
+      actions: step.actions
+    });
+
+    const actionId = m2?.action_id ?? null;
+    const { endingWeight, eventTemplate } = PersonaEngine.applyActionResult(
+      actionId, latent, event, structurePrior
+    );
+
+    Object.entries(endingWeight).forEach(([key, w]) => {
+      endingScores[key] = (endingScores[key] || 0) + w;
+    });
+
+    eventResults.push({
+      ...eventTemplate,
+      outcome: m2?.outcome ?? event.actions.find(a => a.id === eventTemplate.action)?.outcome ?? "",
+      rationale: m2?.rationale ?? `"${eventTemplate.action_label}" 선택.`,
+      prompt_evidence: "",
+      latent_contributors: []
+    });
+  }
+
+  eventResults[eventResults.length - 1].ending_flag = true;
+  const endingKey = Object.entries(endingScores).sort((a, b) => b[1] - a[1])[0]?.[0] || "survivor";
+  const ending = { ...PersonaEngine.ENDINGS[endingKey] };
+
+  return {
+    character_id: character.id,
+    character,
+    model_pipeline: {
+      structure_model: PersonaEngine.MODEL_REGISTRY.persona_structure_model,
+      prompt_to_persona_model: PersonaEngine.MODEL_REGISTRY.prompt_to_persona_model,
+      persona_to_prompt_model: PersonaEngine.MODEL_REGISTRY.persona_to_prompt_model
+    },
+    persona_structure_prior: structurePrior,
+    prompt_interpretation: promptInterpretation,
+    infant_latent_persona: infantLatent,
+    developmental_logs: developmentalLogs,
+    latent_persona: latent,
+    latent_edges: latentEdges,
+    events: eventResults,
+    ending,
+    feedback_updates: []
+  };
 }
 
 function renderSimulation(simulation) {

@@ -1,8 +1,12 @@
 """
-M2 Narration Inference Server
-==============================
+M2 Decision + Narration Inference Server
+==========================================
 FastAPI + Transformers로 Qwen2.5-1.5B-Instruct를 로컬 GPU에서 서빙.
-Node.js server.mjs → POST /generate → 서술 텍스트 반환.
+
+엔드포인트:
+  POST /decide   — 행동 결정 + 서술 (JSON 출력 강제)
+  POST /generate — 자유 텍스트 생성 (기존 호환용)
+  GET  /health   — 서버 상태
 
 실행:
     pip install -r requirements-inference.txt
@@ -12,10 +16,13 @@ Node.js server.mjs → POST /generate → 서술 텍스트 반환.
     modal deploy modal_inference.py
 """
 
+import json
 import os
+import re
 import time
 import logging
 from contextlib import asynccontextmanager
+from typing import List
 
 import torch
 from fastapi import FastAPI, HTTPException
@@ -75,6 +82,63 @@ class GenerateResponse(BaseModel):
     device: str
 
 
+class DecideRequest(BaseModel):
+    system: str
+    user: str
+    valid_ids: List[str]          # 유효한 action_id / adaptation_id 목록
+    id_field: str = "action_id"   # 응답 JSON에서 검증할 필드 이름
+    max_new_tokens: int = 300
+    temperature: float = 0.7
+
+
+class DecideResponse(BaseModel):
+    result: dict   # M2가 생성한 JSON (action_id/adaptation_id + 서술 필드들)
+    raw: str       # 디버그용 원본 텍스트
+    model: str
+
+
+def _run_model(system: str, user: str, max_new_tokens: int, temperature: float) -> str:
+    """공통 모델 실행 로직."""
+    if model is None or tokenizer is None:
+        raise HTTPException(status_code=503, detail="모델 로딩 중")
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user},
+    ]
+    text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    inputs = tokenizer([text], return_tensors="pt").to(DEVICE)
+    with torch.no_grad():
+        output_ids = model.generate(
+            **inputs,
+            max_new_tokens=max_new_tokens,
+            temperature=temperature,
+            do_sample=True,
+            pad_token_id=tokenizer.eos_token_id,
+        )
+    generated = output_ids[0][inputs["input_ids"].shape[1]:]
+    return tokenizer.decode(generated, skip_special_tokens=True).strip()
+
+
+def _extract_json(text: str) -> dict | None:
+    """텍스트에서 JSON 블록을 추출한다. 실패 시 None 반환."""
+    # ```json ... ``` 블록 우선
+    block = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+    if block:
+        try:
+            return json.loads(block.group(1))
+        except json.JSONDecodeError:
+            pass
+    # 중괄호 범위 직접 탐색
+    start = text.find("{")
+    end = text.rfind("}") + 1
+    if start != -1 and end > start:
+        try:
+            return json.loads(text[start:end])
+        except json.JSONDecodeError:
+            pass
+    return None
+
+
 @app.get("/health")
 def health():
     return {"ok": True, "model": MODEL_ID, "device": DEVICE, "loaded": model is not None}
@@ -82,36 +146,37 @@ def health():
 
 @app.post("/generate", response_model=GenerateResponse)
 def generate(req: GenerateRequest):
-    if model is None or tokenizer is None:
-        raise HTTPException(status_code=503, detail="모델 로딩 중")
+    """자유 텍스트 생성 — 기존 /api/narrate 호환용."""
+    narration = _run_model(req.system, req.user, req.max_new_tokens, req.temperature)
+    log.info(f"[generate] 완료 ({len(narration)}자)")
+    return GenerateResponse(narration=narration, model=MODEL_ID, device=DEVICE)
 
-    messages = [
-        {"role": "system", "content": req.system},
-        {"role": "user", "content": req.user},
-    ]
 
-    text = tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True,
-    )
-    inputs = tokenizer([text], return_tensors="pt").to(DEVICE)
+@app.post("/decide", response_model=DecideResponse)
+def decide(req: DecideRequest):
+    """
+    행동 결정 엔드포인트.
+    M2가 valid_ids 중 하나를 id_field로 선택하고 서술 텍스트를 JSON으로 반환한다.
+    id_field가 valid_ids에 없으면 400 에러 (Node.js에서 fallback 처리).
+    """
+    raw = _run_model(req.system, req.user, req.max_new_tokens, req.temperature)
+    log.info(f"[decide] 원본: {raw[:120]}...")
 
-    with torch.no_grad():
-        output_ids = model.generate(
-            **inputs,
-            max_new_tokens=req.max_new_tokens,
-            temperature=req.temperature,
-            do_sample=True,
-            pad_token_id=tokenizer.eos_token_id,
+    result = _extract_json(raw)
+    if result is None:
+        log.warning("[decide] JSON 파싱 실패")
+        raise HTTPException(status_code=422, detail=f"JSON 파싱 실패: {raw[:200]}")
+
+    chosen_id = result.get(req.id_field)
+    if chosen_id not in req.valid_ids:
+        log.warning(f"[decide] 유효하지 않은 id: {chosen_id!r} (valid: {req.valid_ids})")
+        raise HTTPException(
+            status_code=422,
+            detail=f"id '{chosen_id}'이 valid_ids에 없음"
         )
 
-    # 입력 토큰 제거 → 생성된 부분만
-    generated = output_ids[0][inputs["input_ids"].shape[1]:]
-    narration = tokenizer.decode(generated, skip_special_tokens=True).strip()
-
-    log.info(f"생성 완료 ({len(narration)}자)")
-    return GenerateResponse(narration=narration, model=MODEL_ID, device=DEVICE)
+    log.info(f"[decide] 선택: {chosen_id}")
+    return DecideResponse(result=result, raw=raw, model=MODEL_ID)
 
 
 if __name__ == "__main__":

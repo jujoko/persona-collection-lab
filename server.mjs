@@ -4,7 +4,7 @@ import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import { env, pipeline } from "@xenova/transformers";
 import { insertCharacter, insertSimulation, insertFeedback, exportAll } from "./db.mjs";
-import { generateNarration } from "./narrate.mjs";
+import { generateNarration, generateGrowthDecision, generateWorldDecision } from "./narrate.mjs";
 
 const rootDir = fileURLToPath(new URL(".", import.meta.url));
 const port = Number(process.env.PORT || 8787);
@@ -135,6 +135,29 @@ const server = createServer(async (request, response) => {
   }
   if (request.method === "POST" && request.url === "/api/feedback") {
     await handleData(request, response, insertFeedback);
+    return;
+  }
+  if (request.method === "POST" && request.url === "/api/decide") {
+    try {
+      const body = await readRequestJson(request);
+      const type = body.type; // "growth" | "world"
+      let result = null;
+      if (type === "growth") {
+        result = await generateGrowthDecision(body);
+      } else if (type === "world") {
+        result = await generateWorldDecision(body);
+      } else {
+        sendJson(response, 400, { ok: false, error: "type must be 'growth' or 'world'" });
+        return;
+      }
+      if (result) {
+        sendJson(response, 200, { ok: true, result });
+      } else {
+        sendJson(response, 200, { ok: false, fallback: true });
+      }
+    } catch (error) {
+      sendJson(response, 500, { ok: false, error: error?.message || String(error) });
+    }
     return;
   }
   if (request.method === "POST" && request.url === "/api/narrate") {
