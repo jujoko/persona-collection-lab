@@ -43,6 +43,37 @@ function saveState() {
   renderDataset();
 }
 
+async function enhanceWithNarration(simulation) {
+  const developmentSummary = simulation.developmental_logs.map(log => log.adaptation_label);
+  await Promise.all(simulation.events.map(async event => {
+    const target = document.querySelector(`[data-narrate-target="${simulation.character_id}-${event.event_id}"]`);
+    if (!target) return;
+    target.textContent = "서술 생성 중…";
+    try {
+      const response = await fetch("/api/narrate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          character_prompt: simulation.character.prompt,
+          development_summary: developmentSummary,
+          event_title: event.event_title,
+          event_summary: event.event_summary,
+          action_label: event.action_label,
+          latent_vector: simulation.latent_persona
+        })
+      });
+      const data = await response.json();
+      if (data.ok && data.narration) {
+        target.textContent = data.narration;
+      } else {
+        target.textContent = event.rationale;
+      }
+    } catch {
+      target.textContent = event.rationale;
+    }
+  }));
+}
+
 async function syncToServer(type, data) {
   try {
     await fetch(`/api/${type}`, {
@@ -144,6 +175,7 @@ async function runSimulation(character) {
     syncToServer("characters", character);
     syncToServer("simulations", simulation);
     renderSimulation(simulation);
+    enhanceWithNarration(simulation);
   } finally {
     submitBtn.textContent = originalSubmitText;
     submitBtn.disabled = false;
@@ -233,7 +265,7 @@ function renderSimulation(simulation) {
         </section>
         <section>
           <span class="flow-label">판단</span>
-          <p>${event.rationale}</p>
+          <p data-narrate-target="${simulation.character_id}-${event.event_id}">${event.rationale}</p>
         </section>
       </div>
       <div class="feedback-row">

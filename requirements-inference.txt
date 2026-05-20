@@ -1,0 +1,9 @@
+# M2 나레이션 추론 서버 의존성
+# pip install -r requirements-inference.txt
+
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+transformers>=4.40.0
+accelerate>=0.30.0
+torch>=2.2.0          # GPU: pip install torch --index-url https://download.pytorch.org/whl/cu121
+pydantic>=2.0.0

@@ -2,3 +2,10 @@ node_modules/
 *.zip
 .env
 persona_lab.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
