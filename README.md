@@ -1,42 +1,47 @@
 # Persona Collection Lab
 
 LLM 기반 페르소나 생성·시뮬레이션 연구를 위한 게임형 데이터 수집 프로토타입.  
-연구 목적 및 배경은 [`persona_simulation_research_context.md`](persona_simulation_research_context.md)를 참고.
+연구 목적 및 배경은 [`docs/claude/persona_simulation_research_context.md`](docs/claude/persona_simulation_research_context.md)를 참고.
 
 ---
 
 ## 전체 진행도
 
-> **36%** — 인프라 완료, 콘텐츠·분석·학습 단계 진행 예정
+> **48%** — 인프라 완료, 현대 배경 전환 및 ML 파이프라인 설계 완료
 
 | 영역 | 진행 바 | % |
 |---|---|---|
 | 게임 루프 기반 | `██████████` | 100% |
 | 임베딩 서버 | `██████████` | 100% |
 | 데이터 수집 인프라 | `██████████` | 100% |
-| 사건 / 콘텐츠 확장 | `░░░░░░░░░░` | 0% |
+| 현대 배경 전환 | `██████████` | 100% |
+| ML 파이프라인 설계 | `████████░░` | 80% |
+| 합성 학습 데이터 생성 | `░░░░░░░░░░` | 0% |
 | LLM 서술 연동 | `░░░░░░░░░░` | 0% |
 | 캐릭터 비교 / 공유 | `░░░░░░░░░░` | 0% |
 | 데이터 분석 화면 | `░░░░░░░░░░` | 0% |
 | Fly.io 배포 | `██░░░░░░░░` | 20% |
+| M2 KV injection 학습 | `░░░░░░░░░░` | 0% |
 | M3 딥러닝 학습 | `░░░░░░░░░░` | 0% |
 
 ---
 
-## 현재 상태 (v0.2.0)
+## 현재 상태 (v0.2.1)
 
 ### 구현된 것
 
 | 구분 | 내용 |
 |---|---|
-| 세계관 | 몰락 직전의 왕국 1개 고정 |
-| 성장 사건 | G001~G004 (유아기 → 청소년기 4단계) |
-| 성인기 사건 | E001~E005 (5개 템플릿) |
-| 엔딩 | 10종 |
+| **배경** | 현대 한국 (직장·가족·사회 딜레마) |
+| 성장 사건 | G001~G004 (유아기→청년기, 현대 한국 단서어) |
+| 성인기 사건 | ME001~ME005 (내부고발·가족의빚·자원배분·금지된방법·조직의압력) |
+| 엔딩 | 10종 (survivor/whistleblower/conformist/reformer/exile/caregiver/opportunist/martyr/forgotten/changemaker) |
 | 잠재 벡터 | 8차원 latent persona (z0~z7) |
 | M1 | 프롬프트 → latent seed (tanh-linear layer) |
 | M2 | 페르소나 × 사건/행동 임베딩 → 행동 결정 |
-| M3 | 잠재 schema 생성 (현재 규칙 기반 bootstrap) |
+| M3 | latent schema 생성 (규칙 기반 bootstrap) + `ml/train_m3.py` (schema discovery 스크립트) |
+| M2 학습 설계 | KV injection (frozen Qwen2.5-1.5B + adapter MLP) — `ml/train_m2.py` |
+| 합성 데이터 파이프라인 | Nemotron-Personas-Korea + judge 모델 — `ml/build_training_data.py` |
 | 임베딩 서버 | Xenova/all-MiniLM-L6-v2 (Node.js, port 8787) |
 | 피드백 학습 | 브라우저 내 gradient update (action encoder) |
 | 재시뮬레이션 | 피드백 반영 후 같은 사건 재실행 + 비교 카드 |
@@ -46,11 +51,13 @@ LLM 기반 페르소나 생성·시뮬레이션 연구를 위한 게임형 데�
 
 ### 아직 없는 것
 
+- 합성 학습 데이터 실제 생성 (`build_training_data.py` 실행 필요)
+- M2 KV injection 실제 학습 (`train_m2.py` 실행 필요)
+- Supabase 스키마 마이그레이션 (service role key로 수동 실행 필요)
 - 사건 서술의 LLM 동적 생성 (현재 규칙 기반 고정 텍스트)
 - 캐릭터 비교 뷰 / 공유 기능
 - 데이터 분석 화면
 - M3 실제 딥러닝 학습
-- 세계관 추가
 
 ---
 
@@ -90,9 +97,9 @@ start index.html
 자유 프롬프트 입력
   → (서버) all-MiniLM-L6-v2 → 384차원 임베딩
   → M1: 8차원 latent seed 생성 (아기 상태)
-  → G001~G004 성장 사건 (latent 변화 로그)
-  → E001~E005 성인기 사건 (행동 결정)
-  → 결과 카드 + 엔딩
+  → G001~G004 성장 사건 (현대 한국 맥락, latent 변화 로그)
+  → ME001~ME005 성인기 사건 (현대 도덕 딜레마, 행동 결정)
+  → 결과 카드 + 엔딩 (10종)
   → 유저 피드백 → action encoder gradient update
   → 재시뮬레이션 비교
   → localStorage + Supabase 저장
@@ -102,9 +109,32 @@ start index.html
 
 | 모델 | 역할 | 현재 상태 |
 |---|---|---|
-| M3 | latent schema 구조 설계 | 규칙 기반 bootstrap |
+| M3 | latent schema 구조 설계 | 규칙 기반 bootstrap + `train_m3.py` (schema discovery) |
 | M1 | 프롬프트 → latent seed | tanh-linear layer |
-| M2 | 페르소나 × 사건 → 행동 | tanh-linear layer |
+| M2 | 페르소나 × 사건 → 행동 | KV injection 설계 완료 (`train_m2.py`) |
+
+### M2 KV Injection 구조
+
+```
+latent [D]  →  adapter MLP [D→32]  →  KV projection [32→14336]
+  →  past_key_values (28레이어 × 2 × 2 × 128)
+  →  Qwen2.5-1.5B (frozen)  →  action_id
+```
+
+adapter + KV projection 만 학습 (~459K 파라미터), Qwen은 동결.  
+상세: [`docs/claude/design-m2-kv-injection.md`](docs/claude/design-m2-kv-injection.md)
+
+### 합성 학습 데이터 파이프라인
+
+순환 학습 문제(M2가 만든 데이터로 M2를 학습) 해결을 위해 외부 데이터 사용:
+
+```
+Nemotron-Personas-Korea (1M 한국인 페르소나)
+  →  judge 모델 (Qwen 로컬 or Claude API)
+  →  (persona, event_id, action_id) 레이블 생성
+  →  synthetic_training_data.jsonl
+  →  train_m2.py 학습 입력
+```
 
 ---
 
@@ -124,6 +154,18 @@ start index.html
 
 ## 최근 업데이트
 
+### 2026-06-08
+- **현대 한국 배경 전환** — 중세 판타지 사건(E001~E005) → 현대 도덕 딜레마(ME001~ME005)
+  - 내부고발 / 가족의빚 / 자원배분 / 금지된방법 / 조직의압력
+- **엔딩 10종 교체** — whistleblower / reformer / caregiver / changemaker 등 현대 맥락
+- **성장 사건 단서어 교체** — 기사·왕국 → 학교·취업·가족 등 현대 한국 키워드
+- **ML 파이프라인 완성**
+  - `ml/build_training_data.py` — Nemotron-Personas-Korea + judge 모델로 합성 데이터 생성
+  - `ml/train_m2.py` — KV injection 학습 스크립트 (frozen Qwen2.5-1.5B)
+  - `ml/train_m3.py` — latent schema discovery (차원 수, 상관, 분산, 사건 민감도)
+- **디렉토리 재구조화** — `public/` / `src/` / `test/` / `ml/` / `docs/claude/` / `docs/codex/`
+- **Supabase 스키마 확장** — prompt_embedding / latent_seed / infant_latent / final_latent 컬럼 추가 설계
+
 ### 2026-05-20
 - Supabase 연동 — 캐릭터/시뮬레이션/피드백 서버 영속 저장
 - `/api/characters`, `/api/simulations`, `/api/feedback`, `/api/export`, `/api/health` 엔드포인트 추가
@@ -136,13 +178,33 @@ start index.html
 
 ## 앞으로 할 것
 
+### 단기 (합성 데이터 + 학습)
+
+#### Supabase 마이그레이션 실행
+`docs/claude/supabase_migration.sql`을 Supabase SQL Editor(service role 필요)에서 실행.  
+prompt_embedding / latent_seed / infant_latent / final_latent 컬럼이 추가된다.
+
+#### 합성 학습 데이터 생성
+```bash
+pip install datasets
+python ml/build_training_data.py --n-personas 500 --judge claude
+```
+`ml/synthetic_training_data.jsonl` 생성 후 `train_m2.py` 학습 가능.
+
+#### M2 KV injection 첫 학습
+```bash
+python ml/train_m2.py --data ml/synthetic_training_data.jsonl
+```
+학습된 projection layer(`ml/m2_projection.pt`)를 `inference.py`에서 로드해 M2 서술 개선 여부 확인.
+
 ### 단기 (콘텐츠 + 플레이 동기)
 
 #### 사건 확장
-현재 5개 사건은 반복 플레이 시 금방 익숙해진다. 다양한 캐릭터 간 행동 차이를 수집하려면 사건 수와 유형이 늘어야 한다.
+현재 5개 현대 사건(ME001~ME005)은 반복 플레이 시 금방 익숙해진다.  
+다양한 캐릭터 간 행동 차이를 수집하려면 사건 수와 유형이 늘어야 한다.
 
-- 사건 10~15개로 확장
-- 사건 유형 다양화: 도덕적 딜레마 외에 관계 갈등, 권력 유혹, 정체성 위기 등
+- 사건 10~15개로 확장 (직장 외 가족·사회·정치 영역 추가)
+- 사건 유형 다양화: 관계 갈등, 정체성 위기, 권력 유혹 등
 - 사건 태그 기반 분류 (triggered_traits 기반 필터링)
 
 #### LLM 서술 연동
@@ -189,7 +251,7 @@ start index.html
 #### 관리자 분석 화면
 현재 관리자 화면은 raw JSON만 보여준다. 연구 인사이트를 직접 확인할 수 있는 시각화가 필요하다.
 
-- 사건별 행동 분포 차트 (E001에서 캐릭터들이 얼마나 다르게 행동했는가)
+- 사건별 행동 분포 차트 (ME001에서 캐릭터들이 얼마나 다르게 행동했는가)
 - latent vector 군집 시각화 (비슷한 성향의 캐릭터 묶음)
 - 피드백 신호 분포 (consistent / ambiguous / wrong 비율)
 - 엔딩 분포 차트
@@ -236,13 +298,38 @@ start index.html
 
 ---
 
+## 디렉토리 구조
+
+```
+root/
+├── public/          # 브라우저 정적 파일 (index.html, engine.js, app.js, styles.css)
+├── src/             # Node 서버 (server.mjs, db.mjs, narrate.mjs)
+├── test/            # 단위 테스트 (engine.test.js)
+├── ml/              # ML 파이프라인
+│   ├── build_training_data.py   # Nemotron → 합성 학습 데이터
+│   ├── train_m2.py              # M2 KV injection 학습
+│   ├── train_m3.py              # M3 latent schema discovery
+│   ├── inference.py             # Qwen 로컬 추론 서버
+│   └── requirements-*.txt
+├── docs/
+│   ├── claude/      # Claude Code가 작성한 설계 문서
+│   └── codex/       # (예정) Codex 작성 문서
+├── package.json
+├── fly.toml
+└── .env
+```
+
+---
+
 ## 테스트 포인트
 
 - 샘플 버튼으로 캐릭터 채운 뒤 자동 시뮬레이션 실행
-- 성장 로그 G001~G004 순서대로 생성 확인
+- 성장 로그 G001(양육자의 방식)~G004(사회가 요구한 역할) 순서대로 생성 확인
+- 사건 카드가 ME001~ME005 (현대 한국 딜레마)로 출력되는지 확인
 - 서로 다른 캐릭터 2명 이상 실행 후 Supabase 대시보드에서 행 확인
 - `GET http://localhost:8787/api/export` 로 수집 데이터 JSON 확인
 - 사건 카드의 피드백 버튼 클릭 후 latent vector 변화 및 feedback 테이블 확인
 - `피드백 로그로 모델 학습` 버튼으로 loss 변화 확인
 - `현재 페르소나로 다시 실행` 버튼으로 행동 변화 비교 확인
 - 서버 종료 상태에서 `index.html` 직접 열어 localStorage fallback 동작 확인
+- `node test/engine.test.js` 로 엔진 단위 테스트 통과 확인
