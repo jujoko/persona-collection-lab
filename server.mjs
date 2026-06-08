@@ -112,6 +112,16 @@ const server = createServer(async (request, response) => {
     sendJson(response, 200, { ok: true });
     return;
   }
+  if (request.method === "GET" && request.url === "/api/schema") {
+    try {
+      const schemaPath = join(rootDir, "learned_schema.json");
+      const content = await readFile(schemaPath, "utf8");
+      sendJson(response, 200, { ok: true, schema: JSON.parse(content) });
+    } catch {
+      sendJson(response, 404, { ok: false, error: "learned_schema.json 없음 — train_m3.py를 먼저 실행하세요" });
+    }
+    return;
+  }
   if (request.method === "GET" && request.url === "/api/export") {
     try {
       const data = await exportAll();

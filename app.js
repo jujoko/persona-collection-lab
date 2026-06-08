@@ -159,6 +159,7 @@ async function runSimulation(character) {
     const simulation = await runSimulationWithM2(character, neuralModel);
 
     simulation.baseline_events = simulation.events.map(event => ({ ...event }));
+    character.latent_seed = simulation.infant_latent_persona;
     state.characters.push(character);
     state.simulations.push(simulation);
     saveState();

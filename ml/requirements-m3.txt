@@ -1,0 +1,4 @@
+# M3 학습 스크립트 의존성
+# pip install -r requirements-m3.txt
+
+numpy>=1.26.0
