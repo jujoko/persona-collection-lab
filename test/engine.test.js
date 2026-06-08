@@ -1,5 +1,5 @@
 const assert = require("assert");
-const engine = require("./engine");
+const engine = require("../public/engine");
 
 const characters = [
   {

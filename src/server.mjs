@@ -6,7 +6,7 @@ import { env, pipeline } from "@xenova/transformers";
 import { insertCharacter, insertSimulation, insertFeedback, exportAll } from "./db.mjs";
 import { generateNarration, generateGrowthDecision, generateWorldDecision } from "./narrate.mjs";
 
-const rootDir = fileURLToPath(new URL(".", import.meta.url));
+const rootDir = fileURLToPath(new URL("../public/", import.meta.url));
 const port = Number(process.env.PORT || 8787);
 const modelName = "Xenova/all-MiniLM-L6-v2";
 
