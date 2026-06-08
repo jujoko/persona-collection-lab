@@ -83,20 +83,42 @@ FEEDBACK_WEIGHT = {
     "wrong":      -1.0,
 }
 
+CONFIDENCE_WEIGHT = {
+    "high":    1.0,
+    "medium":  0.6,
+    "low":     0.2,
+    "unknown": 0.5,
+}
+
 
 # ─── 데이터 로드 ──────────────────────────────────────────────────────────────
 
-def load_data(server_url: str) -> dict:
+def load_server_data(server_url: str) -> dict:
     url = server_url.rstrip("/") + "/api/export"
-    print(f"[M2] 데이터 로드: {url}")
+    print(f"[M2] 서버 데이터 로드: {url}")
     with urllib.request.urlopen(url, timeout=30) as resp:
         return json.loads(resp.read().decode())
 
 
-def build_examples(feedback_rows: list[dict], latent_dim: int) -> list[dict]:
+def load_synthetic_data(path: str) -> list[dict]:
+    """build_training_data.py가 생성한 JSONL 합성 데이터 로드."""
+    rows = []
+    p = Path(path)
+    if not p.exists():
+        return rows
+    with p.open(encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+    print(f"[M2] 합성 데이터 로드: {len(rows)}개 ({path})")
+    return rows
+
+
+def build_examples_from_feedback(feedback_rows: list[dict], latent_dim: int) -> list[dict]:
     """
-    피드백 행에서 학습 예제를 구성한다.
-    필수 필드: latent_before, event_id, action, feedback_signal
+    실제 피드백 데이터 → 학습 예제.
+    latent_before가 있어야 사용 가능.
     """
     examples = []
     for row in feedback_rows:
@@ -116,7 +138,43 @@ def build_examples(feedback_rows: list[dict], latent_dim: int) -> list[dict]:
             "event_id":  eid,
             "action_id": act,
             "weight":    weight,
+            "source":    "feedback",
         })
+    return examples
+
+
+def build_examples_from_synthetic(
+    synthetic_rows: list[dict],
+    latent_dim: int,
+    m1_encoder,          # encodeTextToLatent 역할의 함수
+) -> list[dict]:
+    """
+    합성 데이터 → 학습 예제.
+    persona_text를 MiniLM으로 임베딩 → latent로 변환.
+    m1_encoder: (persona_text) -> np.ndarray [latent_dim]
+    """
+    examples = []
+    for row in synthetic_rows:
+        eid  = row.get("event_id")
+        act  = row.get("action_id")
+        conf = row.get("confidence", "unknown")
+        text = row.get("persona_text", "")
+        if not (eid and act and text):
+            continue
+        weight = CONFIDENCE_WEIGHT.get(conf, 0.5)
+        try:
+            latent = m1_encoder(text)
+            if len(latent) != latent_dim:
+                continue
+            examples.append({
+                "latent":    torch.tensor(latent, dtype=torch.float32),
+                "event_id":  eid,
+                "action_id": act,
+                "weight":    weight,
+                "source":    "synthetic",
+            })
+        except Exception:
+            continue
     return examples
 
 
@@ -214,7 +272,10 @@ def compute_loss(
 
 def main():
     parser = argparse.ArgumentParser(description="M2 KV Projection 학습")
-    parser.add_argument("--url",        default="http://localhost:8787")
+    parser.add_argument("--url",        default="http://localhost:8787",
+                        help="게임 서버 URL (실제 피드백 데이터 로드)")
+    parser.add_argument("--synthetic",  default="ml/synthetic_training_data.jsonl",
+                        help="합성 학습 데이터 경로 (build_training_data.py 출력)")
     parser.add_argument("--latent-dim", type=int, default=8,
                         help="latent 차원 수 (M3 schema의 latent_dimension)")
     parser.add_argument("--epochs",     type=int, default=20)
@@ -227,14 +288,44 @@ def main():
     print(f"[M2] device: {device}  latent_dim: {args.latent_dim}")
 
     # ── 1. 데이터 로드 ──────────────────────────────────────────────────────
-    try:
-        data = load_data(args.url)
-    except Exception as e:
-        print(f"[오류] 데이터 로드 실패: {e}\n  서버 실행 확인: npm start")
-        sys.exit(1)
 
-    examples = build_examples(data.get("feedback", []), args.latent_dim)
-    print(f"[M2] 학습 예제: {len(examples)}개")
+    # 1-A. 실제 피드백 데이터 (게임 서버)
+    feedback_examples = []
+    try:
+        data = load_server_data(args.url)
+        feedback_examples = build_examples_from_feedback(
+            data.get("feedback", []), args.latent_dim
+        )
+        print(f"[M2] 피드백 예제: {len(feedback_examples)}개")
+    except Exception as e:
+        print(f"[경고] 서버 데이터 로드 실패 ({e}) — 합성 데이터만 사용")
+
+    # 1-B. 합성 데이터 (Nemotron judge)
+    synthetic_rows = load_synthetic_data(args.synthetic)
+    synthetic_examples = []
+    if synthetic_rows:
+        # MiniLM 임베딩 → latent 변환 (간단한 해시 fallback)
+        import numpy as np
+
+        def simple_m1(text: str) -> list[float]:
+            """M1 fallback: 텍스트 해시 기반 초기화 (MiniLM 서버 없을 때)."""
+            h = 2166136261
+            for c in text[:200]:
+                h ^= ord(c)
+                h = (h * 16777619) & 0xFFFFFFFF
+            import math
+            return [math.tanh(math.sin(h * (i + 3) * 0.017 + i * 11.31))
+                    for i in range(args.latent_dim)]
+
+        synthetic_examples = build_examples_from_synthetic(
+            synthetic_rows, args.latent_dim, simple_m1
+        )
+        print(f"[M2] 합성 예제: {len(synthetic_examples)}개")
+
+    examples = feedback_examples + synthetic_examples
+    print(f"[M2] 전체 학습 예제: {len(examples)}개 "
+          f"(피드백 {len(feedback_examples)} + 합성 {len(synthetic_examples)})")
+
     if len(examples) < args.min_samples:
         print(f"[M2] 데이터 부족 (최소 {args.min_samples}개 필요) — 피드백을 더 수집하세요")
         sys.exit(0)
