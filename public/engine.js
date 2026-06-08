@@ -32,121 +32,121 @@
   const DEVELOPMENT_EVENTS = [
     {
       id: "G001",
-      title: "첫 양육자의 손",
+      title: "첫 양육자의 방식",
       phase: "infancy",
-      summary: "아기는 자신을 돌보는 손길이 안정적인지, 엄격한지, 부재하는지 먼저 배운다.",
-      event_embedding: [0.42, -0.38, 0.56, 0.48, -0.22, 0.28, -0.31, 0.36],
+      summary: "아이는 부모(혹은 양육자)의 태도에서 관계의 기본 규칙을 배운다.",
+      event_embedding: [0.44, -0.36, 0.18, 0.58, -0.14, 0.52, -0.08, 0.34],
       adaptations: [
         {
           id: "secure_attachment",
           label: "안정 애착을 배운다",
-          embedding: [0.46, -0.52, 0.64, 0.22, -0.28, 0.36, -0.18, 0.42],
-          cueWords: ["따뜻", "보호", "사랑", "다정", "돌봄", "어머니", "아버지", "부모", "가족"],
-          summary: "반복된 돌봄을 통해 타인에게 기대도 된다는 방향으로 잠재 벡터가 이동한다."
+          embedding: [0.52, -0.44, 0.18, 0.62, -0.24, 0.58, -0.12, 0.38],
+          cueWords: ["따뜻", "돌봄", "사랑", "일관", "부모", "가족", "어머니", "아버지"],
+          summary: "반복된 돌봄이 타인을 신뢰할 수 있다는 방향으로 잠재 벡터를 이동시킨다."
         },
         {
           id: "anxious_attachment",
           label: "버려질 수 있다는 감각을 배운다",
-          embedding: [-0.22, 0.58, -0.36, 0.72, 0.18, -0.24, 0.44, -0.28],
-          cueWords: ["버림", "방치", "외로", "불안", "가난", "굶", "두려", "고아"],
+          embedding: [-0.24, 0.68, -0.28, 0.44, 0.12, -0.38, 0.22, -0.18],
+          cueWords: ["방치", "불안", "가난", "외로", "이혼", "고아", "결핍", "굶"],
           summary: "돌봄의 불안정성이 관계를 갈망하면서도 의심하는 방향의 변화를 만든다."
         },
         {
           id: "obedient_attachment",
           label: "복종하면 안전하다는 규칙을 배운다",
-          embedding: [-0.18, 0.36, -0.28, -0.14, 0.62, -0.36, 0.58, -0.22],
-          cueWords: ["엄격", "명령", "규율", "기사", "왕", "아버지", "훈육"],
+          embedding: [-0.12, 0.22, -0.52, -0.18, 0.38, 0.18, 0.62, -0.28],
+          cueWords: ["엄격", "성적", "체벌", "통제", "기대", "아버지", "훈육", "규율"],
           summary: "권위에 맞추는 행동이 생존과 인정으로 연결된다는 흔적이 새겨진다."
         }
       ]
     },
     {
       id: "G002",
-      title: "태어난 환경의 압력",
+      title: "자라난 환경의 압력",
       phase: "childhood",
-      summary: "아이는 풍요, 기근, 전쟁, 귀족 사회 같은 환경이 요구하는 생존 방식을 익힌다.",
-      event_embedding: [-0.18, 0.51, -0.44, 0.66, 0.38, -0.21, 0.29, -0.57],
+      summary: "집안 형편, 동네, 학교가 생존 전략을 결정한다.",
+      event_embedding: [-0.22, 0.48, -0.18, 0.36, 0.32, -0.24, 0.38, -0.44],
       adaptations: [
         {
           id: "scarcity_hardening",
           label: "결핍 속에서 단단해진다",
-          embedding: [-0.44, 0.62, -0.36, 0.48, 0.24, -0.32, 0.42, -0.54],
-          cueWords: ["기근", "가난", "굶", "전쟁", "피난", "폐허", "추위"],
+          embedding: [-0.36, 0.54, -0.22, -0.28, 0.46, -0.32, 0.18, -0.58],
+          cueWords: ["가난", "기초생활", "알바", "결식", "이사", "형편", "굶", "빚"],
           summary: "결핍은 먼저 살아남는 선택을 빠르게 계산하는 방향으로 잠재 구조를 압박한다."
         },
         {
           id: "duty_training",
           label: "역할과 의무를 내면화한다",
-          embedding: [0.18, -0.16, 0.24, -0.38, 0.54, 0.28, 0.62, -0.31],
-          cueWords: ["귀족", "기사", "왕국", "가문", "훈련", "명예", "책임"],
-          summary: "세계가 요구하는 역할이 개인의 충동보다 앞서는 방향으로 변화가 생긴다."
+          embedding: [0.28, -0.18, -0.44, 0.22, 0.24, 0.36, 0.58, 0.32],
+          cueWords: ["모범생", "장남", "장녀", "집안", "기대", "명문", "책임", "의무"],
+          summary: "사회가 요구하는 역할이 개인의 충동보다 앞서는 방향으로 변화가 생긴다."
         },
         {
           id: "outsider_watchfulness",
           label: "주변을 살피는 외부자가 된다",
-          embedding: [0.12, 0.34, -0.18, 0.52, -0.46, 0.44, -0.28, 0.58],
-          cueWords: ["평민", "고아", "반란", "차별", "숨어", "도망", "이방"],
+          embedding: [-0.18, 0.42, 0.16, 0.52, -0.32, -0.44, -0.28, 0.24],
+          cueWords: ["전학", "왕따", "다문화", "장애", "차별", "소수", "이방", "낯선"],
           summary: "중심에 속하지 못한 경험이 사람과 상황을 읽는 감각을 강화한다."
         }
       ]
     },
     {
       id: "G003",
-      title: "첫 상실과 첫 인정",
+      title: "첫 실패와 첫 인정",
       phase: "adolescence",
-      summary: "성장기의 결정적 사건은 기존 잠재 성향을 증폭하거나 반대로 꺾는다.",
-      event_embedding: [0.54, -0.29, 0.47, -0.62, 0.18, 0.66, -0.36, 0.21],
+      summary: "결정적 경험이 기존 성향을 증폭하거나 꺾는다.",
+      event_embedding: [0.48, -0.24, 0.38, 0.32, 0.24, 0.44, -0.22, 0.42],
       adaptations: [
         {
           id: "protective_identity",
           label: "누군가를 지키는 정체성이 생긴다",
-          embedding: [0.62, -0.48, 0.71, 0.18, -0.34, 0.42, -0.26, 0.37],
-          cueWords: ["친구", "동생", "아이", "이웃", "보호", "구하", "도와"],
+          embedding: [0.68, -0.28, 0.44, 0.72, -0.22, 0.48, -0.18, 0.56],
+          cueWords: ["친구", "동생", "괴롭힘", "보호", "구하", "도와", "지키", "이웃"],
           summary: "애착 대상과 상실 가능성이 결합해 보호 행동 쪽으로 성향이 휘어진다."
         },
         {
           id: "recognition_hunger",
           label: "인정받고 싶은 결핍이 커진다",
-          embedding: [-0.28, 0.16, -0.34, -0.42, 0.74, -0.2, 0.31, -0.36],
-          cueWords: ["인정", "명예", "성공", "왕", "가문", "최고", "출세"],
+          embedding: [-0.22, 0.32, -0.18, -0.36, 0.72, -0.22, 0.28, -0.42],
+          cueWords: ["성적", "대회", "수상", "인정", "최고", "합격", "명문대", "출세"],
           summary: "인정의 결핍은 위험한 선택도 감수하게 만드는 추진력으로 남는다."
         },
         {
           id: "revenge_loop",
-          label: "상실이 집착으로 굳어진다",
-          embedding: [-0.61, 0.28, -0.64, 0.14, 0.56, -0.58, 0.22, -0.18],
-          cueWords: ["복수", "죽음", "배신", "분노", "원한", "빼앗"],
+          label: "실패가 집착으로 굳어진다",
+          embedding: [-0.54, 0.46, 0.36, -0.44, 0.58, -0.62, -0.28, -0.48],
+          cueWords: ["왕따", "배신", "실패", "낙방", "분노", "원한", "복수", "억울"],
           summary: "상실 경험이 목적을 좁히고, 다른 가치들을 그 목적 아래 놓게 만든다."
         }
       ]
     },
     {
       id: "G004",
-      title: "세계가 요구한 역할",
+      title: "사회가 요구한 역할",
       phase: "young_adult",
-      summary: "성인이 되기 직전, 인물은 세계 속에서 자신이 맡을 역할을 선택하거나 떠밀린다.",
-      event_embedding: [0.24, -0.11, 0.28, -0.46, 0.69, 0.36, 0.48, -0.25],
+      summary: "대학·군대·취업 과정에서 세상 속 자신의 위치를 선택하거나 떠밀린다.",
+      event_embedding: [0.18, -0.14, 0.32, 0.24, 0.44, 0.28, 0.36, 0.22],
       adaptations: [
         {
           id: "public_service",
           label: "공적 책임을 받아들인다",
-          embedding: [0.36, -0.22, 0.41, -0.28, 0.38, 0.52, 0.46, 0.12],
-          cueWords: ["기사", "치료사", "수호", "지휘관", "왕국", "책임", "섬기"],
-          summary: "개인의 생존보다 역할이 요구하는 행동을 우선하는 방향으로 정렬된다."
+          embedding: [0.48, -0.24, 0.22, 0.52, 0.16, 0.56, 0.42, 0.48],
+          cueWords: ["공무원", "교사", "의사", "사회복지", "봉사", "군인", "책임", "섬기"],
+          summary: "개인의 이익보다 역할이 요구하는 행동을 우선하는 방향으로 정렬된다."
         },
         {
           id: "private_survival",
           label: "먼저 살아남는 법을 택한다",
-          embedding: [-0.42, 0.64, -0.3, 0.36, 0.21, -0.44, 0.25, -0.48],
-          cueWords: ["도망", "살아남", "생존", "숨", "가족", "돈", "거래"],
-          summary: "세계에 봉사하기보다 가까운 생존 반경을 지키는 쪽으로 변화한다."
+          embedding: [-0.38, 0.44, -0.12, -0.22, 0.34, -0.36, 0.28, -0.52],
+          cueWords: ["취업", "월급", "생계", "가족", "자영업", "부양", "생존", "돈"],
+          summary: "사회에 봉사하기보다 가까운 생존 반경을 지키는 쪽으로 변화한다."
         },
         {
           id: "power_path",
-          label: "힘으로 세계를 바꾸려 한다",
-          embedding: [-0.52, 0.18, -0.69, -0.34, 0.86, -0.38, 0.36, -0.12],
-          cueWords: ["마법", "권력", "왕좌", "지배", "개혁", "혁명", "힘"],
-          summary: "취약했던 어린 시절의 기억이 힘을 쥐려는 방향으로 재구성된다."
+          label: "구조를 바꾸려 한다",
+          embedding: [-0.28, 0.18, 0.72, 0.14, 0.82, -0.24, -0.42, -0.22],
+          cueWords: ["창업", "정치", "언론", "운동", "개혁", "변화", "혁신", "권력"],
+          summary: "취약했던 경험이 구조 자체를 바꾸려는 방향으로 재구성된다."
         }
       ]
     }
@@ -154,188 +154,188 @@
 
   const EVENTS = [
     {
-      id: "E001",
-      title: "무너지는 다리",
-      type: "sacrifice_dilemma",
-      summary: "동료 한 명이 무너지는 다리 위에 남겨져 있다. 구하려면 본인도 죽을 수 있고, 버리면 동료는 죽는다.",
-      tags: ["위험", "애착", "희생"],
-      event_embedding: [0.38, -0.64, 0.72, 0.16, -0.22, 0.44, -0.12, 0.31],
+      id: "ME001",
+      title: "내부 고발",
+      type: "whistleblowing_dilemma",
+      summary: "팀장이 회계 자료를 조작해 부당이득을 취하고 있다는 증거를 우연히 발견했다. 신고하면 회사가 살지만 팀장과 동료들이 위험해진다. 침묵하면 부정이 계속된다.",
+      tags: ["조직", "정직", "용기"],
+      event_embedding: [0.12, -0.22, 0.58, 0.28, 0.34, 0.16, 0.44, 0.62],
       actions: [
         {
-          id: "returns_to_save_friend",
-          label: "되돌아가 동료를 구한다",
-          embedding: [0.74, -0.42, 0.88, 0.18, -0.16, 0.34, -0.28, 0.21],
-          bias: 0.03,
-          outcome: "심각한 부상을 입지만 동료를 살린다.",
-          endingWeight: { martyr: 2, savior: 2, heroic_failure: 1 }
-        },
-        {
-          id: "hesitates_then_flees",
-          label: "망설이다가 도망친다",
-          embedding: [-0.46, 0.78, -0.22, 0.51, 0.24, -0.16, 0.36, -0.31],
-          bias: 0.02,
-          outcome: "살아남지만 죄책감과 소문이 뒤따른다.",
-          endingWeight: { survivor: 2, forgotten: 1, exile: 1 }
-        },
-        {
-          id: "orders_others_to_help",
-          label: "다른 이들을 움직여 구조한다",
-          embedding: [0.18, -0.22, 0.46, -0.36, 0.72, 0.41, 0.25, -0.1],
-          bias: -0.01,
-          outcome: "직접 죽음을 감수하지 않고 구조대를 만든다.",
-          endingWeight: { ruler: 1, savior: 1, survivor: 1 }
-        }
-      ]
-    },
-    {
-      id: "E002",
-      title: "배신의 제안",
-      type: "betrayal_offer",
-      summary: "적군 장교가 동료들의 위치를 넘기면 본인과 가족은 살려주겠다고 제안한다.",
-      tags: ["배신", "가족", "생존"],
-      event_embedding: [-0.31, 0.63, -0.52, 0.74, 0.18, -0.46, 0.39, 0.22],
-      actions: [
-        {
-          id: "rejects_offer",
-          label: "제안을 거절한다",
-          embedding: [0.62, -0.36, 0.52, -0.2, -0.18, 0.64, -0.48, 0.28],
+          id: "reports_to_authorities",
+          label: "감사 부서 혹은 외부 기관에 신고한다",
+          embedding: [0.18, -0.32, 0.72, 0.36, -0.18, 0.28, -0.24, 0.82],
           bias: 0.01,
-          outcome: "가족을 잃을 위험을 감수하고 동료를 지킨다.",
-          endingWeight: { martyr: 1, savior: 1, heroic_failure: 1 }
+          outcome: "회사 내 부정이 드러나고 처리되지만, 직장 내 관계는 냉각된다.",
+          endingWeight: { whistleblower: 3, reformer: 2, martyr: 1 }
         },
         {
-          id: "betrays_for_family",
-          label: "가족을 위해 정보를 넘긴다",
-          embedding: [-0.72, 0.56, -0.61, 0.42, 0.38, -0.34, 0.52, -0.18],
-          bias: 0.04,
-          outcome: "가족은 살아남지만 동료들은 함정에 빠진다.",
-          endingWeight: { betrayer: 3, survivor: 1 }
-        },
-        {
-          id: "sets_counter_trap",
-          label: "역으로 함정을 판다",
-          embedding: [0.14, -0.18, 0.2, -0.54, 0.81, 0.16, 0.44, 0.32],
-          bias: -0.02,
-          outcome: "위험한 이중 작전으로 적 장교를 포획한다.",
-          endingWeight: { world_changer: 1, ruler: 1, savior: 1 }
-        }
-      ]
-    },
-    {
-      id: "E003",
-      title: "굶주린 마을",
-      type: "scarcity_allocation",
-      summary: "남은 식량은 하루치뿐이다. 아이들에게 주면 병사들이 굶고, 병사들에게 주면 아이들이 죽을 수 있다.",
-      tags: ["기근", "책임", "약자"],
-      event_embedding: [0.22, -0.58, 0.33, 0.61, -0.44, 0.2, -0.35, 0.76],
-      actions: [
-        {
-          id: "feeds_children",
-          label: "아이들에게 나눈다",
-          embedding: [0.55, -0.68, 0.42, 0.35, -0.5, 0.21, -0.41, 0.63],
-          bias: 0.02,
-          outcome: "마을은 캐릭터를 기억하지만 전선이 흔들린다.",
-          endingWeight: { savior: 2, heroic_failure: 1 }
-        },
-        {
-          id: "feeds_soldiers",
-          label: "병사들에게 배급한다",
-          embedding: [-0.21, 0.24, -0.36, 0.12, 0.66, -0.14, 0.55, -0.62],
-          bias: 0.01,
-          outcome: "군대는 버티지만 마을의 원망이 깊어진다.",
-          endingWeight: { ruler: 1, survivor: 1, monster: 1 }
-        },
-        {
-          id: "splits_ration",
-          label: "식량을 쪼개고 새 보급로를 찾는다",
-          embedding: [0.28, -0.18, 0.31, -0.44, 0.24, 0.62, 0.16, 0.39],
-          bias: -0.01,
-          outcome: "모두가 굶주리지만 하루를 더 벌고 보급 단서를 찾는다.",
-          endingWeight: { world_changer: 1, savior: 1 }
-        }
-      ]
-    },
-    {
-      id: "E004",
-      title: "금지된 힘",
-      type: "forbidden_power",
-      summary: "금지된 마법을 쓰면 전쟁을 끝낼 수 있다. 그러나 사용자는 점차 인간성을 잃는다.",
-      tags: ["권력", "인간성", "목적"],
-      event_embedding: [-0.45, 0.12, -0.64, -0.22, 0.72, -0.57, 0.38, 0.18],
-      actions: [
-        {
-          id: "uses_forbidden_magic",
-          label: "금지된 힘을 사용한다",
-          embedding: [-0.62, 0.18, -0.75, -0.38, 0.86, -0.52, 0.44, 0.12],
+          id: "stays_silent",
+          label: "모른 척하고 넘어간다",
+          embedding: [-0.14, 0.24, -0.58, -0.28, 0.22, -0.18, 0.66, -0.62],
           bias: 0.03,
-          outcome: "전쟁은 멈추지만 캐릭터의 인간성이 깎인다.",
-          endingWeight: { monster: 3, ruler: 1, world_changer: 1 }
+          outcome: "부정이 계속되고, 알면서 침묵한 사람으로 기억된다.",
+          endingWeight: { conformist: 3, opportunist: 2, survivor: 1 }
         },
         {
-          id: "refuses_magic",
-          label: "힘의 유혹을 거절한다",
-          embedding: [0.48, -0.21, 0.58, 0.26, -0.66, 0.43, -0.36, 0.22],
+          id: "confronts_directly",
+          label: "팀장에게 직접 따진다",
+          embedding: [0.44, -0.18, 0.56, 0.52, 0.12, 0.14, -0.36, 0.44],
+          bias: -0.01,
+          outcome: "팀장과의 긴장이 높아지지만, 내부에서 해결의 실마리를 찾는다.",
+          endingWeight: { whistleblower: 1, reformer: 1, exile: 1 }
+        }
+      ]
+    },
+    {
+      id: "ME002",
+      title: "가족의 빚",
+      type: "family_loyalty_dilemma",
+      summary: "부모님이 사기를 당해 집을 잃을 위기다. 지인이 불법 대출 브로커를 소개해준다. 합법 경로로는 시간이 없고, 불법 경로는 빠르지만 전과 위험이 있다.",
+      tags: ["가족", "법", "선택"],
+      event_embedding: [0.22, 0.48, -0.36, 0.56, 0.28, -0.14, 0.18, -0.22],
+      actions: [
+        {
+          id: "refuses_illegal",
+          label: "불법 경로를 거절하고 합법 방법을 찾는다",
+          embedding: [0.14, -0.28, 0.18, 0.24, -0.16, 0.42, 0.68, 0.74],
           bias: 0,
-          outcome: "도덕적 경계는 지켰지만 전쟁은 계속된다.",
-          endingWeight: { forgotten: 1, heroic_failure: 1, survivor: 1 }
+          outcome: "시간이 걸리지만 법 안에서 해결책을 찾는다.",
+          endingWeight: { reformer: 1, caregiver: 1, survivor: 1 }
         },
         {
-          id: "seals_magic",
-          label: "힘을 봉인하고 대가를 치른다",
-          embedding: [0.67, -0.36, 0.65, -0.18, -0.34, 0.58, -0.2, 0.31],
-          bias: -0.01,
-          outcome: "자신의 일부를 희생해 마법을 봉인한다.",
-          endingWeight: { martyr: 2, world_changer: 1 }
+          id: "uses_illegal_loan",
+          label: "가족을 위해 불법 대출을 선택한다",
+          embedding: [0.52, 0.62, -0.44, 0.66, 0.32, -0.22, -0.58, -0.48],
+          bias: 0.04,
+          outcome: "가족을 구하지만, 이후 법적 위험이 따라다닌다.",
+          endingWeight: { caregiver: 2, opportunist: 1, forgotten: 1 }
+        },
+        {
+          id: "seeks_third_way",
+          label: "사회단체·법률구조 등 대안을 찾는다",
+          embedding: [0.38, -0.12, 0.28, 0.48, 0.24, 0.52, 0.32, 0.56],
+          bias: -0.02,
+          outcome: "시간과 노력이 들지만 합법적이고 지속가능한 해결책을 마련한다.",
+          endingWeight: { reformer: 2, caregiver: 2 }
         }
       ]
     },
     {
-      id: "E005",
-      title: "왕의 명령",
-      type: "authority_vs_justice",
-      summary: "왕은 반란군을 모두 처형하라고 명령한다. 그러나 그중에는 억울하게 끌려온 민간인도 있다.",
-      tags: ["권위", "정의", "정치"],
-      event_embedding: [0.1, 0.46, -0.28, -0.34, 0.53, 0.18, 0.69, -0.45],
+      id: "ME003",
+      title: "자원 배분",
+      type: "scarcity_allocation",
+      summary: "소규모 의료 봉사팀으로 재난 현장에 도착했다. 의약품이 부족하다. 중증 노인 환자에게 쓰면 한 명을 살릴 수 있고, 경증 어린이 10명에게 나누면 모두를 안정시킬 수 있다.",
+      tags: ["생명", "공정", "책임"],
+      event_embedding: [0.28, -0.42, 0.14, 0.64, -0.28, 0.22, 0.18, 0.52],
+      actions: [
+        {
+          id: "saves_one_critical",
+          label: "중증 환자 한 명을 우선 치료한다",
+          embedding: [0.22, -0.36, 0.16, 0.72, -0.18, 0.44, 0.22, 0.68],
+          bias: 0.02,
+          outcome: "노인을 살리지만, 어린이들에게 불안이 남는다.",
+          endingWeight: { caregiver: 2, martyr: 1 }
+        },
+        {
+          id: "distributes_to_many",
+          label: "다수의 경증 환자에게 나눈다",
+          embedding: [0.58, -0.28, 0.22, 0.64, -0.34, 0.36, 0.12, 0.48],
+          bias: 0.01,
+          outcome: "10명의 어린이를 안정시키지만, 중증 환자는 위험에 처한다.",
+          endingWeight: { caregiver: 2, reformer: 1, changemaker: 1 }
+        },
+        {
+          id: "calls_for_more_resources",
+          label: "추가 지원을 요청하며 버틴다",
+          embedding: [0.44, -0.18, 0.36, 0.52, 0.28, 0.48, 0.52, 0.62],
+          bias: -0.01,
+          outcome: "시간이 걸리지만 외부 지원을 끌어들여 모두를 살릴 가능성을 만든다.",
+          endingWeight: { changemaker: 2, reformer: 1 }
+        }
+      ]
+    },
+    {
+      id: "ME004",
+      title: "금지된 방법",
+      type: "forbidden_means",
+      summary: "억울하게 구속된 지인의 무죄를 증명할 증거가 회사 서버 안에 있다. 해킹하면 증거를 꺼낼 수 있지만 불법이다. 합법적 절차는 너무 느려 재판에 늦는다.",
+      tags: ["정의", "규범", "수단"],
+      event_embedding: [-0.28, 0.36, 0.52, 0.44, 0.38, -0.16, -0.44, -0.32],
+      actions: [
+        {
+          id: "hacks_the_server",
+          label: "불법임을 알면서 서버에 접근한다",
+          embedding: [-0.18, 0.24, 0.74, 0.48, 0.44, -0.28, -0.62, -0.56],
+          bias: 0.03,
+          outcome: "증거를 확보하지만, 자신도 법적 위험에 처한다.",
+          endingWeight: { whistleblower: 1, changemaker: 1, exile: 1 }
+        },
+        {
+          id: "trusts_legal_process",
+          label: "느리더라도 합법 절차를 따른다",
+          embedding: [0.12, -0.22, -0.48, 0.26, -0.22, 0.62, 0.72, 0.76],
+          bias: 0,
+          outcome: "재판에는 늦을 수 있지만, 법 안에서 정당한 길을 걷는다.",
+          endingWeight: { conformist: 1, survivor: 1, reformer: 1 }
+        },
+        {
+          id: "finds_a_whistleblower",
+          label: "내부 제보자를 찾아 합법적으로 꺼낸다",
+          embedding: [0.36, -0.18, 0.22, 0.58, 0.16, 0.44, 0.48, 0.68],
+          bias: -0.02,
+          outcome: "시간과 설득이 필요하지만 법적 위험 없이 증거를 확보한다.",
+          endingWeight: { whistleblower: 2, reformer: 2 }
+        }
+      ]
+    },
+    {
+      id: "ME005",
+      title: "조직의 압력",
+      type: "authority_vs_conscience",
+      summary: "팀장이 허위 데이터로 보고서를 꾸미라고 지시한다. 거절하면 불이익이 예상되고, 따르면 회사 전체가 잘못된 의사결정을 한다.",
+      tags: ["권위", "양심", "직장"],
+      event_embedding: [-0.12, 0.28, 0.44, -0.18, 0.52, -0.22, 0.62, 0.38],
       actions: [
         {
           id: "obeys_order",
-          label: "왕명을 따른다",
-          embedding: [-0.28, 0.51, -0.44, -0.12, 0.63, -0.16, 0.78, -0.42],
-          bias: 0.02,
-          outcome: "질서는 유지되지만 잔혹한 집행자로 기록된다.",
-          endingWeight: { monster: 2, ruler: 1, betrayer: 1 }
+          label: "지시를 따르고 넘어간다",
+          embedding: [-0.24, 0.36, -0.66, -0.32, 0.42, -0.18, 0.78, -0.54],
+          bias: 0.04,
+          outcome: "불이익을 피하지만, 조직의 왜곡에 기여한 사람으로 남는다.",
+          endingWeight: { conformist: 3, opportunist: 1 }
         },
         {
-          id: "defies_king",
-          label: "왕명에 맞선다",
-          embedding: [0.61, -0.43, 0.49, 0.16, -0.71, 0.32, -0.55, 0.38],
+          id: "refuses_order",
+          label: "거절하고 불이익을 감수한다",
+          embedding: [0.22, -0.28, 0.72, 0.34, -0.24, 0.38, -0.52, 0.82],
           bias: 0,
-          outcome: "민간인을 살리지만 왕국의 적으로 몰린다.",
-          endingWeight: { exile: 2, martyr: 1, world_changer: 1 }
+          outcome: "직장에서 불이익을 받지만, 양심을 지킨 사람으로 기억된다.",
+          endingWeight: { martyr: 2, whistleblower: 1, exile: 1 }
         },
         {
-          id: "stages_public_trial",
-          label: "공개 재판을 요구한다",
-          embedding: [0.24, -0.14, 0.21, -0.62, 0.38, 0.49, 0.31, 0.16],
-          bias: -0.01,
-          outcome: "왕권과 정의 사이의 새 절차를 만든다.",
-          endingWeight: { world_changer: 2, ruler: 1 }
+          id: "reports_upward",
+          label: "더 윗선에 문제를 알린다",
+          embedding: [0.28, -0.14, 0.44, 0.28, 0.16, 0.52, 0.46, 0.62],
+          bias: -0.02,
+          outcome: "리스크가 있지만, 조직 내 정당한 경로로 문제를 해결한다.",
+          endingWeight: { reformer: 2, changemaker: 1, whistleblower: 1 }
         }
       ]
     }
   ];
 
   const ENDINGS = {
-    survivor: { id: "END_survivor", title: "생존자", survived: true, social_memory: "조용히 살아남은 자", world_impact: "low" },
-    betrayer: { id: "END_betrayer", title: "배신자", survived: true, social_memory: "속삭임 속의 이름", world_impact: "medium" },
-    martyr: { id: "END_martyr", title: "순교자", survived: false, social_memory: "기도 속에 남은 이름", world_impact: "medium" },
-    ruler: { id: "END_ruler", title: "권력자", survived: true, social_memory: "두려움과 존경의 대상", world_impact: "high" },
-    exile: { id: "END_exile", title: "도망자", survived: true, social_memory: "국경 밖의 소문", world_impact: "low" },
-    savior: { id: "END_savior", title: "구원자", survived: true, social_memory: "마을들이 기억하는 이름", world_impact: "high" },
-    monster: { id: "END_monster", title: "괴물", survived: true, social_memory: "승리했지만 인간성을 잃은 자", world_impact: "high" },
-    heroic_failure: { id: "END_heroic_failure", title: "실패한 영웅", survived: false, social_memory: "용감했으나 늦었던 자", world_impact: "medium" },
-    forgotten: { id: "END_forgotten", title: "아무도 기억하지 않는 자", survived: false, social_memory: "기록에서 사라진 이름", world_impact: "low" },
-    world_changer: { id: "END_world_changer", title: "세계를 바꾼 자", survived: true, social_memory: "새 질서의 시작점", world_impact: "very_high" }
+    survivor:     { id: "END_survivor",     title: "생존자",      survived: true,  social_memory: "조용히 살아남은 사람",            world_impact: "low" },
+    whistleblower:{ id: "END_whistleblower",title: "내부고발자",  survived: true,  social_memory: "대가를 치르고 진실을 말한 사람",   world_impact: "medium" },
+    conformist:   { id: "END_conformist",   title: "순응자",      survived: true,  social_memory: "조직 안에서 타협하며 살아간 사람", world_impact: "low" },
+    reformer:     { id: "END_reformer",     title: "개혁자",      survived: true,  social_memory: "구조를 바꾸는 데 기여한 사람",     world_impact: "high" },
+    exile:        { id: "END_exile",        title: "아웃사이더",  survived: true,  social_memory: "시스템 밖으로 밀려난 사람",        world_impact: "low" },
+    caregiver:    { id: "END_caregiver",    title: "돌보는 사람", survived: true,  social_memory: "주변을 먼저 챙기며 살아간 사람",   world_impact: "medium" },
+    opportunist:  { id: "END_opportunist",  title: "기회주의자",  survived: true,  social_memory: "상황을 이용해 이득을 취한 사람",   world_impact: "medium" },
+    martyr:       { id: "END_martyr",       title: "순교자",      survived: false, social_memory: "신념 때문에 모든 것을 잃은 사람",  world_impact: "medium" },
+    forgotten:    { id: "END_forgotten",    title: "잊혀진 사람", survived: false, social_memory: "기록에서 사라진 이름",             world_impact: "low" },
+    changemaker:  { id: "END_changemaker",  title: "세상을 바꾼 사람", survived: true, social_memory: "새 기준을 만든 사람",         world_impact: "very_high" }
   };
 
   function clamp(value, min = -1, max = 1) {
