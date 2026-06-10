@@ -7,7 +7,7 @@ LLM 기반 페르소나 생성·시뮬레이션 연구를 위한 게임형 데�
 
 ## 전체 진행도
 
-> **48%** — 인프라 완료, 현대 배경 전환 및 ML 파이프라인 설계 완료
+> **55%** — M1 학습 완료, 배포 전 M1 서버 연동 단계
 
 | 영역 | 진행 바 | % |
 |---|---|---|
@@ -15,18 +15,57 @@ LLM 기반 페르소나 생성·시뮬레이션 연구를 위한 게임형 데�
 | 임베딩 서버 | `██████████` | 100% |
 | 데이터 수집 인프라 | `██████████` | 100% |
 | 현대 배경 전환 | `██████████` | 100% |
-| ML 파이프라인 설계 | `████████░░` | 80% |
-| 합성 학습 데이터 생성 | `░░░░░░░░░░` | 0% |
+| M1 학습 | `██████████` | 100% |
+| M1 서버 연동 | `░░░░░░░░░░` | 0% |
+| Fly.io 배포 | `██░░░░░░░░` | 20% |
+| 유저 피드백 수집 | `░░░░░░░░░░` | 0% |
+| M3 schema 분석 | `░░░░░░░░░░` | 0% |
+| M2 KV injection 학습 | `░░░░░░░░░░` | 0% |
 | LLM 서술 연동 | `░░░░░░░░░░` | 0% |
 | 캐릭터 비교 / 공유 | `░░░░░░░░░░` | 0% |
-| 데이터 분석 화면 | `░░░░░░░░░░` | 0% |
-| Fly.io 배포 | `██░░░░░░░░` | 20% |
-| M2 KV injection 학습 | `░░░░░░░░░░` | 0% |
-| M3 딥러닝 학습 | `░░░░░░░░░░` | 0% |
 
 ---
 
-## 현재 상태 (v0.2.1)
+## 현재 상태 (v0.2.2)
+
+### 모델별 현황
+
+| 모델 | 상태 | 비고 |
+|---|---|---|
+| **M1** | ✅ 학습 완료 | `ml/m1_adapter.pt` — 서버 연동 대기 중 |
+| **M2** | 🔶 rule-based 동작 중 | action embedding 미검증 — 배포 후 피드백으로 학습 예정 |
+| **M3** | 🔶 규칙 기반 bootstrap | 데이터 수집 후 schema discovery 예정 |
+
+### M1 학습 결과
+
+- Nemotron-Personas-Korea 5,000개 페르소나로 Triplet Loss 학습
+- MiniLM(384-dim, frozen) + adapter MLP(384→64→8) 구조
+- 학습 전: 모든 latent가 near-zero에 몰림 → 학습 후: 0.4~2.1 거리로 공간 분산
+- 인구통계 유사 페르소나끼리 latent 공간에서 더 가깝게 배치됨
+- 상세: [`docs/claude/design-m1-training.md`](docs/claude/design-m1-training.md)
+
+### M2 현황 및 한계
+
+- 현재 cosine similarity 기반 rule-based 행동 결정
+- KV injection 아키텍처 설계 완료 (`ml/train_m2.py`)
+- **학습 보류 이유**: action embedding 값이 수동 설계 → 검증되지 않은 신호로 학습 불가
+- 올바른 학습 신호: 유저 피드백 ("이 캐릭터답다/아니다") → 배포 후 수집
+- 상세: [`docs/claude/design-m2-kv-injection.md`](docs/claude/design-m2-kv-injection.md)
+
+### M3 현황
+
+- 규칙 기반 8차원 latent schema 고정 운영 중
+- `ml/train_m3.py`로 schema discovery 가능하나 데이터 부족으로 미실행
+- M3가 발견한 schema → action embedding 재설정 → M2 재학습 순서
+- 상세: [`docs/claude/design-m3-schema.md`](docs/claude/design-m3-schema.md)
+
+### 다음 작업 순서
+
+```
+M1 서버 연동 → Fly.io 배포 → 유저 피드백 수집
+→ M3 schema 분석 → action embedding 재설정
+→ M2 KV injection 학습
+```
 
 ### 구현된 것
 
@@ -37,27 +76,22 @@ LLM 기반 페르소나 생성·시뮬레이션 연구를 위한 게임형 데�
 | 성인기 사건 | ME001~ME005 (내부고발·가족의빚·자원배분·금지된방법·조직의압력) |
 | 엔딩 | 10종 (survivor/whistleblower/conformist/reformer/exile/caregiver/opportunist/martyr/forgotten/changemaker) |
 | 잠재 벡터 | 8차원 latent persona (z0~z7) |
-| M1 | 프롬프트 → latent seed (tanh-linear layer) |
-| M2 | 페르소나 × 사건/행동 임베딩 → 행동 결정 |
-| M3 | latent schema 생성 (규칙 기반 bootstrap) + `ml/train_m3.py` (schema discovery 스크립트) |
-| M2 학습 설계 | KV injection (frozen Qwen2.5-1.5B + adapter MLP) — `ml/train_m2.py` |
-| 합성 데이터 파이프라인 | Nemotron-Personas-Korea + judge 모델 — `ml/build_training_data.py` |
+| M1 가중치 | `ml/m1_adapter.pt` (Triplet Loss, Nemotron 5K) |
+| M2 | rule-based cosine similarity (KV injection 설계 완료) |
+| M3 | 규칙 기반 bootstrap (schema discovery 스크립트 준비됨) |
 | 임베딩 서버 | Xenova/all-MiniLM-L6-v2 (Node.js, port 8787) |
-| 피드백 학습 | 브라우저 내 gradient update (action encoder) |
-| 재시뮬레이션 | 피드백 반영 후 같은 사건 재실행 + 비교 카드 |
-| 데이터 저장 | localStorage (브라우저) + Supabase (서버) |
-| 데이터 내보내기 | JSON 다운로드 + `/api/export` |
+| 피드백 학습 | 브라우저 내 gradient update |
+| 재시뮬레이션 | 피드백 반영 후 재실행 + 비교 카드 |
+| 데이터 저장 | localStorage + Supabase |
 | 배포 설정 | Fly.io (`fly.toml`) |
 
 ### 아직 없는 것
 
-- 합성 학습 데이터 실제 생성 (`build_training_data.py` 실행 필요)
-- M2 KV injection 실제 학습 (`train_m2.py` 실행 필요)
-- Supabase 스키마 마이그레이션 (service role key로 수동 실행 필요)
-- 사건 서술의 LLM 동적 생성 (현재 규칙 기반 고정 텍스트)
-- 캐릭터 비교 뷰 / 공유 기능
-- 데이터 분석 화면
-- M3 실제 딥러닝 학습
+- M1 서버 연동 (학습된 adapter를 server.mjs에서 로드)
+- Fly.io 실제 배포
+- 유저 피드백 기반 M2 학습
+- M3 데이터 기반 schema discovery
+- LLM 동적 서술 생성
 
 ---
 
