@@ -15,6 +15,9 @@ if [ -n "$HF_MODEL_REPO" ]; then
 from huggingface_hub import hf_hub_download
 import os
 
+import shutil
+from huggingface_hub.errors import RemoteEntryNotFoundError
+
 repo = os.environ["HF_MODEL_REPO"]
 files = ["m1_adapter.pt", "play_model.pt"]
 os.makedirs("ml", exist_ok=True)
@@ -22,10 +25,12 @@ os.makedirs("ml", exist_ok=True)
 for f in files:
     dest = f"ml/{f}"
     if not os.path.exists(dest):
-        print(f"  다운로드: {f}")
-        path = hf_hub_download(repo_id=repo, filename=f)
-        import shutil
-        shutil.copy(path, dest)
+        try:
+            print(f"  다운로드: {f}")
+            path = hf_hub_download(repo_id=repo, filename=f)
+            shutil.copy(path, dest)
+        except RemoteEntryNotFoundError:
+            print(f"  건너뜀: {f} (아직 없음)")
     else:
         print(f"  이미 있음: {f}")
 EOF
