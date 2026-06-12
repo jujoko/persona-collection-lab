@@ -13,9 +13,10 @@ jobs:
           fetch-depth: 0
 
       - name: Push to HF Space
-        uses: huggingface/hub-sync@v1
-        with:
-          repo-id: jujoko/persona-collection-lab
-          repo-type: space
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          hf-token: ${{ secrets.HF_TOKEN }}
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
+          git remote add hf https://jujoko:$HF_TOKEN@huggingface.co/spaces/jujoko/persona-collection-lab
+          git push hf main --force
