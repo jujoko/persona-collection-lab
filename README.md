@@ -1,3 +1,13 @@
+---
+title: Persona Collection Lab
+emoji: 🎭
+colorFrom: indigo
+colorTo: purple
+sdk: docker
+pinned: false
+app_port: 7860
+---
+
 # Persona Collection Lab
 
 LLM 기반 페르소나 생성·시뮬레이션 연구를 위한 게임형 데이터 수집 프로토타입.  
@@ -7,7 +17,7 @@ LLM 기반 페르소나 생성·시뮬레이션 연구를 위한 게임형 데�
 
 ## 전체 진행도
 
-> **55%** — M1 학습 완료, 배포 전 M1 서버 연동 단계
+> **65%** — Play Model 학습 중, ML inference 서버 연동 완료, 배포 준비 단계
 
 | 영역 | 진행 바 | % |
 |---|---|---|
@@ -16,7 +26,10 @@ LLM 기반 페르소나 생성·시뮬레이션 연구를 위한 게임형 데�
 | 데이터 수집 인프라 | `██████████` | 100% |
 | 현대 배경 전환 | `██████████` | 100% |
 | M1 학습 | `██████████` | 100% |
-| M1 서버 연동 | `░░░░░░░░░░` | 0% |
+| M1 서버 연동 | `██████████` | 100% |
+| Play Model 설계 | `██████████` | 100% |
+| Play Model 학습 | `██████░░░░` | 60% |
+| Play Model 서버 연동 | `██████████` | 100% |
 | Fly.io 배포 | `██░░░░░░░░` | 20% |
 | 유저 피드백 수집 | `░░░░░░░░░░` | 0% |
 | M3 schema 분석 | `░░░░░░░░░░` | 0% |
@@ -26,13 +39,14 @@ LLM 기반 페르소나 생성·시뮬레이션 연구를 위한 게임형 데�
 
 ---
 
-## 현재 상태 (v0.2.2)
+## 현재 상태 (v0.2.3)
 
 ### 모델별 현황
 
 | 모델 | 상태 | 비고 |
 |---|---|---|
-| **M1** | ✅ 학습 완료 | `ml/m1_adapter.pt` — 서버 연동 대기 중 |
+| **M1** | ✅ 학습 완료 + 서버 연동 완료 | `ml/m1_adapter.pt` — `/api/persona` 엔드포인트 활성 |
+| **Play Model** | 🔄 학습 중 | `ml/train_play_model.py` 실행 중 — 완료 후 `/api/play_action` 활성 |
 | **M2** | 🔶 rule-based 동작 중 | action embedding 미검증 — 배포 후 피드백으로 학습 예정 |
 | **M3** | 🔶 규칙 기반 bootstrap | 데이터 수집 후 schema discovery 예정 |
 
@@ -62,7 +76,9 @@ LLM 기반 페르소나 생성·시뮬레이션 연구를 위한 게임형 데�
 ### 다음 작업 순서
 
 ```
-M1 서버 연동 → Fly.io 배포 → 유저 피드백 수집
+Play Model 학습 완료 대기
+→ Fly.io 배포
+→ 유저 피드백 수집
 → M3 schema 분석 → action embedding 재설정
 → M2 KV injection 학습
 ```
@@ -76,9 +92,11 @@ M1 서버 연동 → Fly.io 배포 → 유저 피드백 수집
 | 성인기 사건 | ME001~ME005 (내부고발·가족의빚·자원배분·금지된방법·조직의압력) |
 | 엔딩 | 10종 (survivor/whistleblower/conformist/reformer/exile/caregiver/opportunist/martyr/forgotten/changemaker) |
 | 잠재 벡터 | 8차원 latent persona (z0~z7) |
-| M1 가중치 | `ml/m1_adapter.pt` (Triplet Loss, Nemotron 5K) |
+| M1 가중치 | `ml/m1_adapter.pt` (Triplet Loss, Nemotron 5K) — `/api/persona` 연동 완료 |
+| Play Model | `ml/play_model.pt` (학습 중) — klue/roberta-base fine-tune, skills/hobbies head |
 | M2 | rule-based cosine similarity (KV injection 설계 완료) |
 | M3 | 규칙 기반 bootstrap (schema discovery 스크립트 준비됨) |
+| ML inference 서버 | `ml/inference_server.py` (Python, port 8788) — M1 + Play Model |
 | 임베딩 서버 | Xenova/all-MiniLM-L6-v2 (Node.js, port 8787) |
 | 피드백 학습 | 브라우저 내 gradient update |
 | 재시뮬레이션 | 피드백 반영 후 재실행 + 비교 카드 |
@@ -187,6 +205,19 @@ Nemotron-Personas-Korea (1M 한국인 페르소나)
 ---
 
 ## 최근 업데이트
+
+### 2026-06-11
+- **ML inference 서버 추가** — `ml/inference_server.py` (Python, port 8788)
+  - M1: `POST /persona` — 텍스트 → 8-dim latent vector
+  - Play Model: `POST /play_action` — 텍스트 + action 후보 → action_id
+- **Node.js 프록시 연동** — `/api/persona`, `/api/play_action` 엔드포인트 추가
+- **Play Model 설계 및 학습 시작**
+  - 인코더: klue/roberta-base (fine-tune, 768-dim)
+  - 데이터: Nemotron-Personas-Korea 전체 (train 80% / valid 10% / test 10%)
+  - full(페르소나+스킬+취미) / sparse(페르소나만) 두 버전으로 augmentation
+  - Stage 1: 텍스트 → skills_emb + hobbies_emb
+  - Stage 2: cosine similarity → action_id (학습 없음)
+- **설계 문서**: `docs/claude/design-play-model.md`
 
 ### 2026-06-08
 - **현대 한국 배경 전환** — 중세 판타지 사건(E001~E005) → 현대 도덕 딜레마(ME001~ME005)

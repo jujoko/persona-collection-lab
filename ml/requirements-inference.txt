@@ -1,9 +1,13 @@
-# M2 나레이션 추론 서버 의존성
-# pip install -r requirements-inference.txt
+# ML inference 서버 의존성 (inference_server.py)
+# CPU 배포용: pip install -r requirements-inference.txt
+# GPU 사용 시: torch 줄을 GPU 버전으로 교체
 
+torch>=2.2.0          # GPU: pip install torch --index-url https://download.pytorch.org/whl/cu121
+transformers>=4.40.0
+sentence-transformers>=2.7.0
+accelerate>=0.30.0
+
+# M2 나레이션 서버 (inference.py) — 선택
 fastapi>=0.111.0
 uvicorn[standard]>=0.29.0
-transformers>=4.40.0
-accelerate>=0.30.0
-torch>=2.2.0          # GPU: pip install torch --index-url https://download.pytorch.org/whl/cu121
 pydantic>=2.0.0

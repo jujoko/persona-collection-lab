@@ -6,6 +6,8 @@ import { env, pipeline } from "@xenova/transformers";
 import { insertCharacter, insertSimulation, insertFeedback, exportAll } from "./db.mjs";
 import { generateNarration, generateGrowthDecision, generateWorldDecision } from "./narrate.mjs";
 
+const ML_SERVER = process.env.ML_SERVER || "http://localhost:8788";
+
 const rootDir = fileURLToPath(new URL("../public/", import.meta.url));
 const port = Number(process.env.PORT || 8787);
 const modelName = "Xenova/all-MiniLM-L6-v2";
@@ -37,6 +39,25 @@ async function readRequestJson(request) {
   for await (const chunk of request) chunks.push(chunk);
   const text = Buffer.concat(chunks).toString("utf8");
   return text ? JSON.parse(text) : {};
+}
+
+async function proxyToMl(request, response, path) {
+  try {
+    const body = await readRequestJson(request);
+    const mlRes = await fetch(`${ML_SERVER}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const payload = await mlRes.json();
+    sendJson(response, mlRes.status, payload);
+  } catch (error) {
+    sendJson(response, 503, {
+      ok: false,
+      error: "ML 서버 연결 실패 — inference_server.py가 실행 중인지 확인하세요",
+      detail: error?.message || String(error),
+    });
+  }
 }
 
 async function embedText(request, response) {
@@ -133,6 +154,14 @@ const server = createServer(async (request, response) => {
   }
   if (request.method === "POST" && request.url === "/api/embed") {
     await embedText(request, response);
+    return;
+  }
+  if (request.method === "POST" && request.url === "/api/persona") {
+    await proxyToMl(request, response, "/persona");
+    return;
+  }
+  if (request.method === "POST" && request.url === "/api/play_action") {
+    await proxyToMl(request, response, "/play_action");
     return;
   }
   if (request.method === "POST" && request.url === "/api/characters") {

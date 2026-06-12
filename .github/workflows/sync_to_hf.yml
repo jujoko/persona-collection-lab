@@ -1,0 +1,21 @@
+name: Sync to HF Space
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push to HF Space
+        uses: huggingface/hub-sync@v1
+        with:
+          repo-id: jujoko/persona-collection-lab
+          repo-type: space
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          hf-token: ${{ secrets.HF_TOKEN }}

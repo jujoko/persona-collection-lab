@@ -1,11 +1,23 @@
-node_modules/
-*.zip
+# 환경
 .env
-persona_lab.db
+.venv/
+node_modules/
+
+# ML 데이터 / 체크포인트 (용량 큼)
+ml/data/
+ml/play_model_ckpt/
+ml/synthetic_training_data.jsonl
+ml/build_report.json
+
+# 모델 가중치 (HF Hub에 별도 저장)
+ml/m1_adapter.pt
+ml/play_model.pt
 
 # Python
 __pycache__/
 *.pyc
 *.pyo
-.venv/
-venv/
+
+# 기타
+.DS_Store
+*.log

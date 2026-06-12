@@ -1,0 +1,10 @@
+.git
+.env
+node_modules
+ml/.venv
+ml/data/
+ml/play_model_ckpt/
+__pycache__
+*.pyc
+*.pyo
+.DS_Store

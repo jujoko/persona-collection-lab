@@ -48,11 +48,25 @@ async def lifespan(app: FastAPI):
     log.info(f"모델 로딩: {MODEL_ID} ({DEVICE})")
     t0 = time.time()
     tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
-    model = AutoModelForCausalLM.from_pretrained(
-        MODEL_ID,
-        torch_dtype=torch.float16 if DEVICE == "cuda" else torch.float32,
-        device_map="auto",
-    )
+    load_kwargs = {"device_map": "auto"}
+    if DEVICE == "cuda":
+        use_4bit = os.getenv("USE_4BIT", "1") == "1"
+        if use_4bit:
+            try:
+                from transformers import BitsAndBytesConfig
+                load_kwargs["quantization_config"] = BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_compute_dtype=torch.float16,
+                )
+                log.info("4비트 양자화 적용 (bitsandbytes)")
+            except ImportError:
+                log.warning("bitsandbytes 없음 — float16으로 fallback")
+                load_kwargs["torch_dtype"] = torch.float16
+        else:
+            load_kwargs["torch_dtype"] = torch.float16
+    else:
+        load_kwargs["torch_dtype"] = torch.float32
+    model = AutoModelForCausalLM.from_pretrained(MODEL_ID, **load_kwargs)
     model.eval()
     log.info(f"로딩 완료 ({time.time() - t0:.1f}s)")
     yield
