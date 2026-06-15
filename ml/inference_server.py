@@ -12,6 +12,7 @@ Node.js server.mjs가 이 서버로 프록시한다.
 """
 
 import json
+import os
 import sys
 import traceback
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -25,7 +26,7 @@ from sentence_transformers import SentenceTransformer
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-PORT = 8788
+PORT = int(os.getenv("ML_PORT", "8788"))
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 M1_MODEL_PATH   = Path("ml/m1_adapter.pt")
@@ -192,6 +193,17 @@ class Handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(204)
         self.end_headers()
+
+    def do_GET(self):
+        if self.path == "/health":
+            self.send_json(200, {
+                "ok": True,
+                "device": DEVICE,
+                "m1_available": M1_MODEL_PATH.exists(),
+                "play_model_available": pm_available,
+            })
+            return
+        self.send_json(404, {"error": "not found"})
 
     def do_POST(self):
         try:

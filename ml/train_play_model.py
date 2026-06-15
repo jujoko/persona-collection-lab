@@ -1,7 +1,7 @@
 """
 Play Model Stage 1 학습 스크립트
 
-인코더: klue/roberta-base (fine-tune, 768-dim)
+인코더: klue/roberta-base (768-dim)
 헤드:   Skills Head  MLP (768→128→768)
         Hobbies Head MLP (768→128→768)
 
@@ -9,9 +9,18 @@ Play Model Stage 1 학습 스크립트
   cosine_loss = 1 - cosine_similarity(예측값, target)
   target = 해당 리스트 아이템들의 klue/roberta-base 임베딩 평균
 
-학습률:
-  인코더: 1e-5 (기존 언어 이해 유지)
-  헤드:   1e-3 (빠르게 학습)
+학습 전략 (Curriculum Learning):
+  Phase 1: FREEZE_ENCODER=True,  SAMPLE_SIZE=100_000  → 빠른 기본 학습
+  Phase 2: FREEZE_ENCODER=True,  SAMPLE_SIZE=500_000  → 체크포인트 이어서 refinement
+  Phase 3: FREEZE_ENCODER=False, SAMPLE_SIZE=None     → 전체 fine-tuning
+
+  FREEZE_ENCODER=True  → head만 학습 (빠름, 에폭당 수십 분)
+  FREEZE_ENCODER=False → 인코더까지 학습 (느림, 에폭당 수십 시간)
+
+샘플링:
+  SAMPLE_SIZE=None 이면 전체 데이터 사용
+  SAMPLE_SIZE=N 이면 sample_dataset.py로 생성한 sampled JSONL 사용
+  (ml/data/play_model_train_sampled_{N}.jsonl)
 
 target 임베딩 캐시:
   최초 1회만 계산 → ml/data/{split}_targets.npy 저장
@@ -27,6 +36,7 @@ target 임베딩 캐시:
 import json
 import sys
 import random
+import argparse
 from pathlib import Path
 
 import numpy as np
@@ -41,7 +51,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 # ── 설정 ──────────────────────────────────────────────────────────────
 DATA_DIR      = Path("ml/data")
-CKPT_DIR      = Path("ml/play_model_ckpt")
+CKPT_ROOT     = Path("ml/play_model_ckpt")
 FINAL_MODEL   = Path("ml/play_model.pt")
 
 ENCODER_NAME  = "klue/roberta-base"
@@ -50,10 +60,30 @@ HIDDEN_DIM    = 128
 BATCH_SIZE    = 64
 LR_ENCODER    = 1e-5
 LR_HEAD       = 1e-3
-EPOCHS        = 20
+DEFAULT_EPOCHS = 20
 MAX_LEN       = 256
 SEED          = 42
 PRECOMPUTE_BATCH = 512   # target 임베딩 사전 계산 배치 크기
+
+PHASE_CONFIG = {
+    1: {"freeze_encoder": True,  "sample_size": 100_000},
+    2: {"freeze_encoder": True,  "sample_size": 500_000},
+    3: {"freeze_encoder": False, "sample_size": None},
+}
+
+parser = argparse.ArgumentParser(description="Play Model curriculum training")
+parser.add_argument("--phase", type=int, choices=PHASE_CONFIG, default=1)
+parser.add_argument("--epochs", type=int, default=DEFAULT_EPOCHS,
+                    help="현재 phase에서 실행할 총 에폭 수")
+parser.add_argument("--no-resume", action="store_true",
+                    help="현재 phase 체크포인트를 무시하고 이전 phase 가중치부터 시작")
+args = parser.parse_args()
+
+PHASE = args.phase
+EPOCHS = args.epochs
+FREEZE_ENCODER = PHASE_CONFIG[PHASE]["freeze_encoder"]
+SAMPLE_SIZE = PHASE_CONFIG[PHASE]["sample_size"]
+CKPT_DIR = CKPT_ROOT / f"phase_{PHASE}"
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -63,11 +93,18 @@ np.random.seed(SEED)
 CKPT_DIR.mkdir(parents=True, exist_ok=True)
 
 print(f"device: {DEVICE}")
+print(f"phase: {PHASE}  freeze_encoder: {FREEZE_ENCODER}  "
+      f"sample_size: {SAMPLE_SIZE or '전체'}")
 
 # ── 인코더 로드 ───────────────────────────────────────────────────────
 print(f"인코더 로드 중: {ENCODER_NAME}")
 tokenizer = AutoTokenizer.from_pretrained(ENCODER_NAME)
 encoder   = AutoModel.from_pretrained(ENCODER_NAME).to(DEVICE)
+
+if FREEZE_ENCODER:
+    for param in encoder.parameters():
+        param.requires_grad = False
+    print("인코더 frozen — head만 학습")
 
 def mean_pool(model_output, attention_mask) -> torch.Tensor:
     token_emb = model_output.last_hidden_state        # (B, L, 768)
@@ -137,6 +174,13 @@ class PlayModelDataset(Dataset):
 
         # (N, 2, 768): targets[:, 0, :] = skills_emb, targets[:, 1, :] = hobbies_emb
         self.targets = np.load(cache_path, mmap_mode="r")
+        expected_shape = (len(self.records), 2, EMBED_DIM)
+        if self.targets.shape != expected_shape:
+            raise ValueError(
+                f"target 캐시 shape 불일치: {cache_path} "
+                f"expected={expected_shape}, actual={self.targets.shape}. "
+                "캐시 파일을 삭제한 뒤 다시 실행하세요."
+            )
 
         print(f"  로드: {jsonl_path.name}  {len(self.records):,}개")
 
@@ -159,7 +203,8 @@ def collate_fn(batch):
     skills_tgt  = torch.stack([b["skills_emb"]  for b in batch])
     hobbies_tgt = torch.stack([b["hobbies_emb"] for b in batch])
 
-    input_emb = encode_texts(texts, grad=True)  # (B, 768)
+    # FREEZE_ENCODER=True면 grad 불필요
+    input_emb = encode_texts(texts, grad=not FREEZE_ENCODER)
 
     return input_emb, skills_tgt.to(DEVICE), hobbies_tgt.to(DEVICE)
 
@@ -191,7 +236,7 @@ def cosine_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
 # ── 학습 루프 ─────────────────────────────────────────────────────────
 def run_epoch(model, loader, optimizer, train: bool) -> float:
     model.train(train)
-    encoder.train(train)
+    encoder.train(train and not FREEZE_ENCODER)
     total_loss = 0.0
 
     for input_emb, skills_tgt, hobbies_tgt in tqdm(
@@ -212,17 +257,29 @@ def run_epoch(model, loader, optimizer, train: bool) -> float:
 
 # ── 메인 ──────────────────────────────────────────────────────────────
 
-# 1. target 임베딩 사전 계산 (캐시 없을 때만)
+# 1. 학습 데이터 파일 결정 (샘플 or 전체)
+if SAMPLE_SIZE is not None:
+    train_jsonl = DATA_DIR / f"play_model_train_sampled_{SAMPLE_SIZE}.jsonl"
+    train_cache = DATA_DIR / f"train_sampled_{SAMPLE_SIZE}_targets.npy"
+    if not train_jsonl.exists():
+        print(f"\n샘플 파일 없음: {train_jsonl}")
+        print("먼저 ml/sample_dataset.py를 실행하세요:")
+        print(f"  python ml/sample_dataset.py --size {SAMPLE_SIZE}")
+        exit(1)
+else:
+    train_jsonl = DATA_DIR / "play_model_train.jsonl"
+    train_cache = DATA_DIR / "train_targets.npy"
+
+# 2. target 임베딩 사전 계산 (캐시 없을 때만)
 print("\ntarget 임베딩 캐시 확인 중...")
-precompute_targets(DATA_DIR / "play_model_train.jsonl",
-                   DATA_DIR / "train_targets.npy")
+precompute_targets(train_jsonl,
+                   train_cache)
 precompute_targets(DATA_DIR / "play_model_valid.jsonl",
                    DATA_DIR / "valid_targets.npy")
 
-# 2. 데이터셋 로드
+# 3. 데이터셋 로드
 print("\n데이터셋 로드 중...")
-train_ds = PlayModelDataset(DATA_DIR / "play_model_train.jsonl",
-                            DATA_DIR / "train_targets.npy")
+train_ds = PlayModelDataset(train_jsonl, train_cache)
 valid_ds = PlayModelDataset(DATA_DIR / "play_model_valid.jsonl",
                             DATA_DIR / "valid_targets.npy")
 
@@ -231,19 +288,24 @@ train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE,
 valid_loader = DataLoader(valid_ds, batch_size=BATCH_SIZE,
                           shuffle=False, collate_fn=collate_fn, num_workers=0)
 
-# 3. 모델 / 옵티마이저
+# 4. 모델 / 옵티마이저
 model = PlayModel().to(DEVICE)
 
-optimizer = torch.optim.Adam([
-    {"params": encoder.parameters(), "lr": LR_ENCODER},
-    {"params": model.parameters(),   "lr": LR_HEAD},
-])
+# FREEZE_ENCODER=True면 인코더 파라미터 제외
+if FREEZE_ENCODER:
+    optimizer = torch.optim.Adam(model.parameters(), lr=LR_HEAD)
+else:
+    optimizer = torch.optim.Adam([
+        {"params": encoder.parameters(), "lr": LR_ENCODER},
+        {"params": model.parameters(),   "lr": LR_HEAD},
+    ])
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=EPOCHS)
 
-# 체크포인트에서 이어서 학습
+# 현재 phase 체크포인트에서만 optimizer/scheduler까지 복원한다.
 start_epoch = 1
+best_valid_loss = float("inf")
 ckpt_files  = sorted(CKPT_DIR.glob("epoch_*.pt"))
-if ckpt_files:
+if ckpt_files and not args.no_resume:
     last  = ckpt_files[-1]
     state = torch.load(last, map_location=DEVICE)
     model.load_state_dict(state["model"])
@@ -251,12 +313,20 @@ if ckpt_files:
     optimizer.load_state_dict(state["optimizer"])
     scheduler.load_state_dict(state["scheduler"])
     start_epoch = state["epoch"] + 1
+    best_valid_loss = state.get("best_valid_loss", best_valid_loss)
     print(f"체크포인트 로드: {last.name}  (epoch {state['epoch']} 완료, {start_epoch}부터 재개)")
+elif PHASE > 1:
+    if not FINAL_MODEL.exists():
+        raise FileNotFoundError(
+            f"이전 phase 가중치가 없습니다: {FINAL_MODEL}. Phase {PHASE - 1}을 먼저 완료하세요."
+        )
+    state = torch.load(FINAL_MODEL, map_location=DEVICE)
+    model.load_state_dict(state["model"])
+    encoder.load_state_dict(state["encoder"])
+    print(f"이전 phase 가중치 로드: {FINAL_MODEL}")
 
 print(f"\n학습 시작  epochs: {start_epoch}~{EPOCHS}")
 print(f"batch: {BATCH_SIZE}  lr_encoder: {LR_ENCODER}  lr_head: {LR_HEAD}\n")
-
-best_valid_loss = float("inf")
 
 for epoch in range(start_epoch, EPOCHS + 1):
     train_loss = run_epoch(model, train_loader, optimizer, train=True)
@@ -273,7 +343,9 @@ for epoch in range(start_epoch, EPOCHS + 1):
           f"train: {train_loss:.4f}  valid: {valid_loss:.4f}  {improved}")
 
     torch.save({
+        "phase":     PHASE,
         "epoch":     epoch,
+        "best_valid_loss": best_valid_loss,
         "model":     model.state_dict(),
         "encoder":   encoder.state_dict(),
         "optimizer": optimizer.state_dict(),

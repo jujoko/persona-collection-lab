@@ -1,15 +1,40 @@
 app = "persona-collection-lab"
 primary_region = "nrt"
+kill_signal = "SIGTERM"
+kill_timeout = 30
+swap_size_mb = 1024
 
 [build]
 
+[deploy]
+  strategy = "rolling"
+  wait_timeout = "15m"
+
+[env]
+  PORT = "7860"
+  ML_PORT = "8788"
+  REQUIRE_PLAY_MODEL = "1"
+  REQUIRE_SUPABASE = "1"
+  REQUIRE_SERVICE_ROLE = "1"
+
 [http_service]
-  internal_port = 8787
+  internal_port = 7860
   force_https = true
   auto_stop_machines = false
   auto_start_machines = true
   min_machines_running = 1
 
+[[http_service.checks]]
+  grace_period = "5m"
+  interval = "30s"
+  method = "GET"
+  timeout = "10s"
+  path = "/api/health"
+
+[[restart]]
+  policy = "on-failure"
+  retries = 5
+
 [[vm]]
   size = "shared-cpu-1x"
-  memory = "256mb"
+  memory = "2gb"

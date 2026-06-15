@@ -4,7 +4,11 @@ node_modules
 ml/.venv
 ml/data/
 ml/play_model_ckpt/
+ml/*.pt
+ml/*.npy
+ml/*.jsonl
 __pycache__
 *.pyc
 *.pyo
 .DS_Store
+Persona Collection Game.zip
