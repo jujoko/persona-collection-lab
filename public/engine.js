@@ -673,7 +673,7 @@
     return ranked[0] || { text: fragments[0], evidence_score: 0 };
   }
 
-  function encodeTextToLatent(character, schema = { latent_dimensions: LATENT_DIMS }, neuralModel = null) {
+  function encodePromptToLatent(character, schema = { latent_dimensions: LATENT_DIMS }, neuralModel = null) {
     const dims = schema.latent_dimensions.length;
     const externalEmbedding = Array.isArray(character.external_embedding)
       ? character.external_embedding
@@ -704,6 +704,35 @@
     return encoded;
   }
 
+  function createInnateDevelopmentProfile(character) {
+    const seed = String(character.innate_seed || `${character.id || "anonymous"}|${character.free_text_length || 0}|innate-growth`);
+    return DEVELOPMENT_EVENTS.map(event => {
+      const raw = event.adaptations.map(signal => {
+        const h = hashText(`${seed}:${event.id}:${signal.id}`);
+        const wave = Math.sin(h * 0.019) + Math.cos(h * 0.007);
+        return {
+          id: signal.id,
+          label: signal.label,
+          raw: Math.max(0.02, wave + 1.25)
+        };
+      });
+      const total = raw.reduce((sum, item) => sum + item.raw, 0) || 1;
+      return {
+        event_id: event.id,
+        event_title: event.title,
+        signal_bias: raw.map(item => ({
+          id: item.id,
+          label: item.label,
+          weight: Number((item.raw / total).toFixed(4))
+        }))
+      };
+    });
+  }
+
+  function encodeTextToLatent(character, schema = { latent_dimensions: LATENT_DIMS }, neuralModel = null) {
+    return encodePromptToLatent(character, schema, neuralModel);
+  }
+
   function designPersonaSchema(character = { prompt: "" }) {
     const prompt = characterText(character);
     const dimensionCount = 8 + (hashText(prompt || "schema") % 5) * 2;
@@ -731,11 +760,11 @@
       schema_id: `LS_${hashText(prompt || "schema").toString().slice(0, 6)}`,
       latent_dimension: dimensionCount,
       latent_dimensions: latentDimensions,
-      node_initialization_rule: "prompt-conditioned seed generation",
+      node_initialization_rule: "zero baseline -> prompt-conditioned vector; innate seed perturbs growth-stage signal weights",
       edge_update_rule: "development/event/feedback-conditioned updates",
       update_functions: {
         prompt_to_seed: "M1(prompt, schema) -> infant_latent",
-        development_event: "M2(previous_latent, caregiver_signal, environment_event, schema) -> next_latent",
+        development_event: "growth_event + prompt_fit + innate_development_profile -> next_latent",
         world_event: "M2(latent, event, action, feedback, schema) -> updated_latent"
       },
       prior_edges: adjacency.sort((a, b) => b.weight - a.weight).slice(0, Math.min(12, dimensionCount))
@@ -748,7 +777,9 @@
 
   function interpretPromptToPersona(character, structurePrior = getPersonaStructurePrior(character), neuralModel = null) {
     const promptText = characterText(character);
-    const infantLatent = encodeTextToLatent(character, structurePrior, neuralModel);
+    const promptLatent = encodePromptToLatent(character, structurePrior, neuralModel);
+    const innateDevelopmentProfile = createInnateDevelopmentProfile(character);
+    const infantLatent = promptLatent;
     const promptFragments = splitPromptFragments(promptText);
     const strongestFragments = promptFragments
       .map(fragment => ({
@@ -763,6 +794,10 @@
       based_on_model: structurePrior.model_id,
       input_prompt: character.prompt,
       prompt_fragments: strongestFragments.map(item => item.text),
+      prompt_latent_persona: promptLatent,
+      innate_seed: character.innate_seed || null,
+      innate_development_influence: INNATE_DEVELOPMENT_INFLUENCE,
+      innate_development_profile: innateDevelopmentProfile,
       infant_latent_persona: infantLatent,
       latent_structure_edges: inferLatentEdges(infantLatent),
       neural_model_id: neuralModel?.id || null,
@@ -777,37 +812,67 @@
     return cueWords.reduce((score, word) => score + (lower.includes(word.toLowerCase()) ? 0.34 : 0), 0);
   }
 
-  function applyDevelopment(initialLatent, character, structurePrior = getPersonaStructurePrior(character)) {
+  function rankDevelopmentSignals(event, latent, promptText, dims, innateDevelopmentProfile = null) {
+    const eventEmbedding = fitEmbedding(event.event_embedding, dims, event.id);
+    const innateBias = innateDevelopmentProfile
+      ?.find(item => item.event_id === event.id)
+      ?.signal_bias || [];
+    const uniformWeight = 1 / Math.max(1, event.adaptations.length);
+    return event.adaptations
+      .map(signal => {
+        const signalEmbedding = fitEmbedding(signal.embedding, dims, signal.id);
+        const contextFit = cueScore(promptText, signal.cueWords);
+        const latentFit = dot(latent, signalEmbedding) * 0.58;
+        const eventFit = dot(latent, eventEmbedding) * 0.16;
+        const innateWeight = innateBias.find(item => item.id === signal.id)?.weight ?? uniformWeight;
+        const innateFit = (innateWeight - uniformWeight) * INNATE_DEVELOPMENT_INFLUENCE;
+        return {
+          ...signal,
+          signal_embedding: signalEmbedding,
+          innate_weight: innateWeight,
+          innate_fit: Number(innateFit.toFixed(4)),
+          development_score: Number((contextFit + latentFit + eventFit + innateFit).toFixed(4))
+        };
+      })
+      .sort((a, b) => b.development_score - a.development_score);
+  }
+
+  function blendDevelopmentSignals(event, currentLatent, character, structurePrior, innateDevelopmentProfile = null) {
     const promptText = characterText(character);
     const dims = structurePrior.latent_dimension;
-    let latent = [...initialLatent];
-    const logs = DEVELOPMENT_EVENTS.map(event => {
-      const ranked = event.adaptations
-        .map(adaptation => {
-          const contextFit = cueScore(promptText, adaptation.cueWords);
-          const adaptationEmbedding = fitEmbedding(adaptation.embedding, dims, adaptation.id);
-          const eventEmbedding = fitEmbedding(event.event_embedding, dims, event.id);
-          const latentFit = dot(latent, adaptationEmbedding) * 0.58;
-          const eventFit = dot(latent, eventEmbedding) * 0.16;
-          return {
-            ...adaptation,
-            development_score: Number((contextFit + latentFit + eventFit).toFixed(4))
-          };
-        })
-        .sort((a, b) => b.development_score - a.development_score);
-      const adaptation = ranked[0];
-      const adaptationEmbedding = fitEmbedding(adaptation.embedding, dims, adaptation.id);
-      const eventEmbedding = fitEmbedding(event.event_embedding, dims, event.id);
-      const evidence = findEvidenceByEmbedding(promptText, adaptationEmbedding, adaptation.cueWords);
-      const before = [...latent];
-      const receptivity = 0.14 + Math.max(0, dot(latent, eventEmbedding)) * 0.05;
-      const updated = latent.map((value, index) => {
-        const inertia = value * 0.88;
-        const environmentalImpact = adaptationEmbedding[index] * receptivity;
-        return clamp(inertia + environmentalImpact);
-      });
-      latent = normalize(updated);
-      return {
+    const eventEmbedding = fitEmbedding(event.event_embedding, dims, event.id);
+    const profile = innateDevelopmentProfile || createInnateDevelopmentProfile(character);
+    const ranked = rankDevelopmentSignals(event, currentLatent, promptText, dims, profile);
+    const maxScore = ranked[0]?.development_score || 0;
+    const rawWeights = ranked.map(signal => Math.exp(signal.development_score - maxScore));
+    const totalWeight = rawWeights.reduce((sum, value) => sum + value, 0) || 1;
+    const signalMix = ranked.map((signal, index) => ({
+      id: signal.id,
+      label: signal.label,
+      score: signal.development_score,
+      innate_weight: signal.innate_weight,
+      weight: Number((rawWeights[index] / totalWeight).toFixed(4))
+    }));
+    const blendedEmbedding = normalize(Array.from({ length: dims }, (_, index) =>
+      ranked.reduce((sum, signal, signalIndex) => {
+        const weight = rawWeights[signalIndex] / totalWeight;
+        return sum + signal.signal_embedding[index] * weight;
+      }, 0)
+    ));
+    const evidence = findEvidenceByEmbedding(promptText, blendedEmbedding, ranked.flatMap(signal => signal.cueWords || []));
+    const before = [...currentLatent];
+    const receptivity = 0.13 + Math.max(0, dot(currentLatent, eventEmbedding)) * 0.05;
+    const updated = currentLatent.map((value, index) => {
+      const inertia = value * 0.9;
+      const environmentalImpact = blendedEmbedding[index] * receptivity;
+      return clamp(inertia + environmentalImpact);
+    });
+    const newLatent = normalize(updated);
+    const topSignals = signalMix.slice(0, 3);
+    const topLabels = topSignals.map(signal => signal.label).join(" / ");
+    return {
+      newLatent,
+      logTemplate: {
         model_id: MODEL_REGISTRY.persona_to_prompt_model.id,
         based_on_model: structurePrior.model_id,
         event_id: event.id,
@@ -815,17 +880,30 @@
         event_title: event.title,
         event_summary: event.summary,
         event_embedding: eventEmbedding,
-        adaptation: adaptation.id,
-        adaptation_label: adaptation.label,
-        adaptation_embedding: adaptationEmbedding,
-        development_score: adaptation.development_score,
+        adaptation: "blended_development_signal",
+        adaptation_label: `혼합 성장 신호: ${topLabels}`,
+        adaptation_embedding: blendedEmbedding,
+        signal_mix: signalMix,
+        innate_development_profile: profile.find(item => item.event_id === event.id) || null,
+        innate_development_influence: INNATE_DEVELOPMENT_INFLUENCE,
+        development_score: topSignals[0]?.score || 0,
         latent_before: before,
-        latent_after: latent,
+        latent_after: newLatent,
         prompt_evidence: evidence.text,
         prompt_evidence_score: evidence.evidence_score,
-        summary: adaptation.summary,
-        rationale: `프롬프트의 "${evidence.text}" 부분이 가장 크게 작용해 "${adaptation.label}" 방향의 성장 변화를 만들었다.`
-      };
+        summary: `프롬프트가 하나의 유형으로 고정되지 않고 ${topLabels} 신호를 서로 다른 비율로 남겼다.`,
+        rationale: `프롬프트의 "${evidence.text}" 부분을 중심으로 여러 성장 신호가 동시에 작용했다.`
+      }
+    };
+  }
+
+  function applyDevelopment(initialLatent, character, structurePrior = getPersonaStructurePrior(character)) {
+    let latent = [...initialLatent];
+    const innateDevelopmentProfile = createInnateDevelopmentProfile(character);
+    const logs = DEVELOPMENT_EVENTS.map(event => {
+      const { newLatent, logTemplate } = blendDevelopmentSignals(event, latent, character, structurePrior, innateDevelopmentProfile);
+      latent = newLatent;
+      return logTemplate;
     });
     return { latent, logs };
   }
@@ -846,7 +924,7 @@
     return edges.sort((a, b) => b.weight - a.weight).slice(0, 8);
   }
 
-  function chooseAction(event, latentVector, structurePrior, neuralModel = null) {
+  function scoreActionDistribution(event, latentVector, structurePrior, neuralModel = null) {
     const dims = latentVector.length;
     const rawEventEmbedding = fitEmbedding(event.event_embedding, dims, event.id);
     const eventEmbedding = isCompatibleModel(neuralModel, structurePrior)
@@ -868,11 +946,74 @@
         };
       })
       .sort((a, b) => b.decision_score - a.decision_score);
-    return ranked[0];
+    const maxScore = ranked[0]?.decision_score || 0;
+    const rawProbabilities = ranked.map(action => Math.exp((action.decision_score - maxScore) * 2.15));
+    const totalProbability = rawProbabilities.reduce((sum, value) => sum + value, 0) || 1;
+    return ranked.map((action, index) => ({
+      ...action,
+      choice_probability: Number((rawProbabilities[index] / totalProbability).toFixed(4))
+    }));
   }
 
-  function interpretPersonaForEvent(event, latentVector, promptText, structurePrior, neuralModel = null) {
-    const action = chooseAction(event, latentVector, structurePrior, neuralModel);
+  function routeRarity(probability) {
+    if (probability <= 0.00001) return "mythic";
+    if (probability <= 0.0001) return "legendary";
+    if (probability <= 0.001) return "rare";
+    if (probability <= 0.01) return "uncommon";
+    return "common";
+  }
+
+  function seededUnit(seed) {
+    return (hashText(seed) % 1000000) / 1000000;
+  }
+
+  function chooseWeightedAction(distribution, seed) {
+    const roll = seededUnit(seed);
+    let cumulative = 0;
+    for (const action of distribution) {
+      cumulative += action.choice_probability || 0;
+      if (roll <= cumulative) return action;
+    }
+    return distribution.at(-1);
+  }
+
+  function buildVisibleActionSet(distribution, selectedAction, seed) {
+    const visible = new Set();
+    distribution.forEach(action => {
+      const appearanceProbability = clamp(0.18 + (action.choice_probability || 0) * 1.15, 0.22, 0.92);
+      action.appearance_probability = Number(appearanceProbability.toFixed(4));
+      if (seededUnit(`${seed}:${action.id}:visible`) <= appearanceProbability) {
+        visible.add(action.id);
+      }
+    });
+    visible.add(selectedAction.id);
+    if (visible.size < 2) {
+      distribution
+        .filter(action => !visible.has(action.id))
+        .slice(0, 1)
+        .forEach(action => visible.add(action.id));
+    }
+    return distribution.map(action => ({
+      id: action.id,
+      label: action.label,
+      decision_score: action.decision_score,
+      probability: action.choice_probability,
+      appearance_probability: action.appearance_probability,
+      visible: visible.has(action.id)
+    }));
+  }
+
+  function chooseAction(event, latentVector, structurePrior, neuralModel = null, routeSeed = "") {
+    const ranked = scoreActionDistribution(event, latentVector, structurePrior, neuralModel);
+    const selected = chooseWeightedAction(ranked, `${routeSeed || "route"}:${event.id}:actual`);
+    const actionDistribution = buildVisibleActionSet(ranked, selected, `${routeSeed || "route"}:${event.id}`);
+    selected.action_distribution = actionDistribution;
+    selected.visible_action_ids = actionDistribution.filter(action => action.visible).map(action => action.id);
+    return selected;
+  }
+
+  function interpretPersonaForEvent(event, latentVector, promptText, structurePrior, neuralModel = null, routeSeed = "") {
+    const action = chooseAction(event, latentVector, structurePrior, neuralModel, routeSeed);
     const rationale = makeRationale(action, event, latentVector, promptText);
     return {
       model_id: MODEL_REGISTRY.persona_to_prompt_model.id,
@@ -962,6 +1103,187 @@
     };
   }
 
+  const ADAPTATION_BRIEFINGS = {
+    secure_attachment: {
+      trait: "압박이 커질수록 안정적인 관계를 기준점으로 삼는다",
+      desire: "믿을 수 있는 사람들과 안전한 울타리를 지키고 싶다",
+      fear: "한 번 안전하다고 느낀 사람을 잃는 것",
+      hint: "관계가 걸린 선택지에서는 보호하거나 신뢰를 유지하는 쪽으로 기울 수 있다.",
+      risk: "소속감을 지키려다 필요한 충돌을 미룰 수 있다."
+    },
+    anxious_attachment: {
+      trait: "버려짐과 손실의 신호를 빠르게 감지한다",
+      desire: "자신이 버려지지 않는다는 확실한 증거를 원한다",
+      fear: "취약한 선택을 한 뒤 버림받는 것",
+      hint: "거절이나 이탈의 기미가 보이면 급한 자기방어 선택을 할 수 있다.",
+      risk: "침묵이나 거리를 배신으로 읽고 과잉 반응할 수 있다."
+    },
+    obedient_attachment: {
+      trait: "행동하기 전에 권위와 규칙의 눈치를 먼저 본다",
+      desire: "인정된 질서 안에서 안전하게 살아남고 싶다",
+      fear: "눈에 보이는 질서를 어겼을 때의 처벌",
+      hint: "위계가 강한 장면에서는 신중함, 절차, 우회적 저항이 먼저 떠오를 수 있다.",
+      risk: "압박 속에서 안전과 복종을 혼동할 수 있다."
+    },
+    scarcity_hardening: {
+      trait: "생존 비용을 빠르게 계산한다",
+      desire: "이상보다 먼저 기본 자원을 확보하고 싶다",
+      fear: "다시 부족함 속으로 밀려나는 것",
+      hint: "자원이 부족한 장면에서는 상징적 선의보다 실제 생존을 우선할 가능성이 높다.",
+      risk: "가혹한 선택도 현실적인 필요라고 합리화할 수 있다."
+    },
+    duty_training: {
+      trait: "책임을 자신의 정체성으로 받아들인다",
+      desire: "쓸모 있고 필요한 사람이 되고 싶다",
+      fear: "타인이 맡긴 역할을 실패하는 것",
+      hint: "의무가 명명되는 순간 사적인 편안함보다 역할을 앞세울 수 있다.",
+      risk: "그 의무가 공정한지 묻기 전에 너무 많이 희생할 수 있다."
+    },
+    outsider_watchfulness: {
+      trait: "무리의 가장자리에서 분위기를 읽는다",
+      desire: "뛰어들기 전에 안전한 각도를 찾고 싶다",
+      fear: "눈에 띄어 표적이 되는 것",
+      hint: "사회적으로 애매한 장면에서는 관찰하고 거리를 시험한 뒤 움직일 가능성이 높다.",
+      risk: "공개적으로 손잡아야 할 타이밍을 놓칠 수 있다."
+    },
+    protective_identity: {
+      trait: "누군가를 지키는 일을 자기 정체성으로 삼는다",
+      desire: "가깝거나 약한 사람을 보호하고 싶다",
+      fear: "해를 입는 장면을 보고도 아무것도 하지 못하는 것",
+      hint: "취약한 사람이 노출되면 개입 가능성이 급격히 커진다.",
+      risk: "누군가를 지키기 위해 갈등을 키울 수 있다."
+    },
+    recognition_hunger: {
+      trait: "자신의 가치를 눈에 보이는 증거로 확인받고 싶어 한다",
+      desire: "특별한 사람으로 인정받고 싶다",
+      fear: "평범하거나 실패한 사람으로 판단되는 것",
+      hint: "평판과 성취가 걸리면 과감한 선택에 끌릴 수 있다.",
+      risk: "지위나 박수가 걸려 있으면 무리수를 둘 수 있다."
+    },
+    revenge_loop: {
+      trait: "모욕을 목적의식으로 바꾼다",
+      desire: "억울함 뒤의 균형을 되찾고 싶다",
+      fear: "모욕이 영구적인 진실처럼 굳어지는 것",
+      hint: "불공정함은 타협보다 응징 쪽으로 마음을 끌 수 있다.",
+      risk: "처벌을 정의로 착각할 수 있다."
+    },
+    public_service: {
+      trait: "책임은 개인 밖으로 확장되어야 한다고 믿는다",
+      desire: "시스템을 덜 잔인하게 만들고 싶다",
+      fear: "공적 피해 위에 사적 안락을 얻는 것",
+      hint: "제도적, 시민적 선택지가 빠른 개인 이익보다 더 매력적으로 보일 수 있다.",
+      risk: "상황이 허락하는 것보다 오래 공식 절차를 신뢰할 수 있다."
+    },
+    private_survival: {
+      trait: "가까운 생존 반경을 먼저 지킨다",
+      desire: "가족과 생계를 무너지지 않게 붙들고 싶다",
+      fear: "숭고한 선택 때문에 자기 사람들이 위험해지는 것",
+      hint: "생존이 사적인 문제로 다가오면 작지만 안전한 경계를 선택할 수 있다.",
+      risk: "도덕의 범위를 가까운 사람들에게만 좁힐 수 있다."
+    },
+    power_path: {
+      trait: "견디는 것보다 구조 자체를 바꾸고 싶어 한다",
+      desire: "규칙을 다시 쓸 만큼의 힘을 얻고 싶다",
+      fear: "타인의 시스템 안에서 계속 무력하게 남는 것",
+      hint: "판을 바꿀 수 있는 선택지가 보이면 그쪽으로 끌릴 수 있다.",
+      risk: "변화의 대가로 부수 피해를 받아들일 수 있다."
+    }
+  };
+
+  const INNATE_DEVELOPMENT_INFLUENCE = 0.22;
+
+  function uniqueByText(items, fallbackItems, limit) {
+    const seen = new Set();
+    return [...items, ...fallbackItems]
+      .filter(Boolean)
+      .filter(item => {
+        const text = typeof item === "string" ? item : item.text || item.label || item;
+        if (!text || seen.has(text)) return false;
+        seen.add(text);
+        return true;
+      })
+      .slice(0, limit);
+  }
+
+  function summarizePersona(character, details = {}) {
+    const logs = details.developmental_logs || details.developmentalLogs || [];
+    const promptInterpretation = details.prompt_interpretation || details.promptInterpretation || {};
+    const latent = details.latent_persona || details.latentPersona || [];
+    const shiftSize = log => Math.sqrt((log.latent_after || []).reduce((sum, value, index) => {
+      const delta = value - (log.latent_before?.[index] || 0);
+      return sum + delta * delta;
+    }, 0));
+    const strongestLogs = [...logs]
+      .sort((a, b) => {
+        return shiftSize(b) - shiftSize(a);
+      });
+    const briefings = strongestLogs
+      .flatMap(log => {
+        const signalIds = Array.isArray(log.signal_mix) && log.signal_mix.length > 0
+          ? log.signal_mix.map(signal => signal.id)
+          : [log.adaptation];
+        return signalIds.map(id => ADAPTATION_BRIEFINGS[id]);
+      })
+      .filter(Boolean);
+    const latentHighlights = latent
+      .map((value, index) => ({ index, value }))
+      .sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
+      .slice(0, 3)
+      .map(({ index, value }) => `z${index} ${value >= 0 ? "+" : ""}${value.toFixed(2)}`);
+    const fallbackTraits = [
+      "상황이 바뀌어도 비교적 일관된 내적 논리를 유지한다",
+      "초기 압박을 성인기의 결정 방식으로 끌고 온다",
+      latentHighlights.length ? `가장 강한 잠재 신호: ${latentHighlights.join(", ")}` : "읽을 수 있지만 아직 흔들리는 출발점을 가진다"
+    ];
+    const coreTraits = uniqueByText(
+      briefings.map(item => item.trait),
+      fallbackTraits,
+      3
+    );
+    const desires = uniqueByText(
+      briefings.map(item => item.desire),
+      ["스스로 납득 가능한 선택을 하고 싶다", "성장 과정에서 만든 정체성을 지키고 싶다"],
+      2
+    );
+    const fears = uniqueByText(
+      briefings.map(item => item.fear),
+      ["결정적인 순간에 무력해지는 것", "돌아갈 수 없는 오답을 고르는 것"],
+      2
+    );
+    const predictionHints = uniqueByText(
+      briefings.map(item => item.hint),
+      [
+        "Compare every option against the persona's earliest pressure, not only the event text.",
+        "선택지를 사건 내용만이 아니라 초기 압박과 대조해 보라.",
+        "정체성과 생존을 동시에 지키는 선택일수록 가능성이 높다."
+      ],
+      3
+    );
+    const riskSignals = uniqueByText(
+      briefings.map(item => item.risk),
+      ["하나의 가치가 지나치게 커지는 순간을 주의하라.", "압박은 강점을 맹점으로 바꿀 수 있다."],
+      2
+    );
+    const strongestTrait = coreTraits[0] || "안정적이지만 계속 변하는 결정 패턴을 가진 인물";
+    return {
+      title: `${character.generated_name || character.name || character.id || "Persona"} 브리핑`,
+      one_line: `${strongestTrait}. 이 인물은 무작위로 고르는 존재가 아니라, 반복되는 패턴으로 읽을수록 예측하기 쉬워진다.`,
+      core_traits: coreTraits,
+      desires,
+      fears,
+      prediction_hints: predictionHints,
+      risk_signals: riskSignals,
+      prompt_fragments: (promptInterpretation.prompt_fragments || []).slice(0, 3),
+      growth_summary: logs.map(log => ({
+        event_id: log.event_id,
+        event_title: log.event_title,
+        adaptation: log.adaptation,
+        adaptation_label: log.adaptation_label,
+        summary: log.summary
+      }))
+    };
+  }
+
   function simulate(character, providedLatent, neuralModel = null) {
     const structurePrior = getPersonaStructurePrior(character);
     const compatibleModel = isCompatibleModel(neuralModel, structurePrior) ? neuralModel : null;
@@ -982,11 +1304,19 @@
     const development = applyDevelopment(infantLatent, character, structurePrior);
     const adultLatent = development.latent;
     const latentEdges = inferLatentEdges(adultLatent);
+    const personaCard = summarizePersona(character, {
+      prompt_interpretation: promptInterpretation,
+      developmental_logs: development.logs,
+      latent_persona: adultLatent
+    });
     const endingScores = {};
+    let routeProbability = 1;
     const eventResults = EVENTS.map(event => {
-      const interpretation = interpretPersonaForEvent(event, adultLatent, promptText, structurePrior, compatibleModel);
+      const routeSeed = `${character.id || characterText(character)}:${character.innate_seed || "no-seed"}:${event.id}`;
+      const interpretation = interpretPersonaForEvent(event, adultLatent, promptText, structurePrior, compatibleModel, routeSeed);
       const action = interpretation.action;
       const rationale = interpretation.rationale;
+      routeProbability *= action.choice_probability || 1;
       Object.entries(action.endingWeight).forEach(([endingKey, weight]) => {
         endingScores[endingKey] = (endingScores[endingKey] || 0) + weight;
       });
@@ -1004,6 +1334,11 @@
         action_embedding: action.embedding,
         action_summary: action.outcome,
         decision_score: action.decision_score,
+        action_probability: action.choice_probability,
+        action_distribution: action.action_distribution,
+        visible_action_ids: action.visible_action_ids,
+        route_probability: Number(routeProbability.toPrecision(6)),
+        route_rarity: routeRarity(routeProbability),
         rationale: rationale.text,
         prompt_evidence: rationale.prompt_evidence,
         prompt_evidence_score: rationale.prompt_evidence_score,
@@ -1034,6 +1369,7 @@
       } : null,
       infant_latent_persona: infantLatent,
       developmental_logs: development.logs,
+      persona_card: personaCard,
       latent_persona: adultLatent,
       latent_edges: latentEdges,
       events: eventResults,
@@ -1060,10 +1396,13 @@
     const promptText = characterText(character);
     const normalizedLatent = normalize(latentVector.map(value => clamp(value)));
     const compatibleModel = isCompatibleModel(neuralModel, structurePrior) ? neuralModel : null;
+    let routeProbability = 1;
     const events = EVENTS.map(event => {
-      const interpretation = interpretPersonaForEvent(event, normalizedLatent, promptText, structurePrior, compatibleModel);
+      const routeSeed = `${character.id || promptText}:${runLabel}:${event.id}`;
+      const interpretation = interpretPersonaForEvent(event, normalizedLatent, promptText, structurePrior, compatibleModel, routeSeed);
       const action = interpretation.action;
       const rationale = interpretation.rationale;
+      routeProbability *= action.choice_probability || 1;
       return {
         event_id: event.id,
         chapter: event.chapter,
@@ -1078,6 +1417,11 @@
         action_embedding: action.embedding,
         action_summary: action.outcome,
         decision_score: action.decision_score,
+        action_probability: action.choice_probability,
+        action_distribution: action.action_distribution,
+        visible_action_ids: action.visible_action_ids,
+        route_probability: Number(routeProbability.toPrecision(6)),
+        route_rarity: routeRarity(routeProbability),
         rationale: rationale.text,
         prompt_evidence: rationale.prompt_evidence,
         prompt_evidence_score: rationale.prompt_evidence_score,
@@ -1207,9 +1551,11 @@
    */
   function applyActionResult(actionId, currentLatent, event, structurePrior) {
     const dims = currentLatent.length;
-    const action = event.actions.find(a => a.id === actionId)
+    const distribution = scoreActionDistribution(event, currentLatent, structurePrior);
+    const action = distribution.find(a => a.id === actionId)
       || chooseAction(event, currentLatent, structurePrior); // fallback: 룰 기반
     const actionEmbedding = fitEmbedding(action.embedding, dims, action.id);
+    const actionDistribution = buildVisibleActionSet(distribution, action, `${event.id}:${actionId || "engine"}`);
     return {
       endingWeight: action.endingWeight,
       eventTemplate: {
@@ -1224,6 +1570,10 @@
         action: action.id,
         action_label: action.label,
         action_embedding: actionEmbedding,
+        decision_score: action.decision_score,
+        action_probability: action.choice_probability,
+        action_distribution: actionDistribution,
+        visible_action_ids: actionDistribution.filter(item => item.visible).map(item => item.id),
         ending_flag: false
         // outcome, rationale: M2가 채운다
       }
@@ -1252,18 +1602,22 @@
     EVENTS,
     ENDINGS,
     encodeTextToLatent,
+    encodePromptToLatent,
+    createInnateDevelopmentProfile,
     createTrainableModel,
     trainDeepLearningModel,
     getPersonaStructurePrior,
     interpretPromptToPersona,
     interpretPersonaForEvent,
     applyDevelopment,
+    blendDevelopmentSignals,
     findEvidenceByEmbedding,
     inferLatentEdges,
     updateLatentWithFeedback,
     simulateWorldEvents,
     simulate,
     scoreEnding,
+    summarizePersona,
     buildSimulationContext,
     buildGrowthStep,
     applyAdaptationResult,

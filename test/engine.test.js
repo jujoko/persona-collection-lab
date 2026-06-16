@@ -24,8 +24,17 @@ for (const character of characters) {
   assert.ok(simulation.persona_structure_prior.latent_dimension >= 8);
   assert.strictEqual(simulation.persona_structure_prior.latent_dimensions.length, simulation.persona_structure_prior.latent_dimension);
   assert.ok(simulation.prompt_interpretation.prompt_fragments.length > 0);
+  assert.strictEqual(simulation.prompt_interpretation.prompt_latent_persona.length, simulation.persona_structure_prior.latent_dimension);
+  assert.strictEqual(simulation.prompt_interpretation.innate_development_profile.length, engine.DEVELOPMENT_EVENTS.length);
+  assert.strictEqual(simulation.prompt_interpretation.innate_development_influence, 0.22);
   assert.strictEqual(simulation.infant_latent_persona.length, simulation.persona_structure_prior.latent_dimension);
+  assert.deepStrictEqual(simulation.prompt_interpretation.prompt_latent_persona, simulation.infant_latent_persona);
   assert.strictEqual(simulation.developmental_logs.length, 4);
+  assert.ok(simulation.persona_card);
+  assert.ok(simulation.persona_card.title.includes("브리핑"));
+  assert.strictEqual(simulation.persona_card.core_traits.length, 3);
+  assert.ok(simulation.persona_card.prediction_hints.length >= 2);
+  assert.strictEqual(simulation.persona_card.growth_summary.length, simulation.developmental_logs.length);
   assert.strictEqual(simulation.events.length, 10);
   assert.ok(simulation.ending.id.startsWith("END_"));
   assert.strictEqual(simulation.latent_persona.length, simulation.persona_structure_prior.latent_dimension);
@@ -35,11 +44,27 @@ for (const character of characters) {
     assert.ok(log.latent_before.length === simulation.persona_structure_prior.latent_dimension);
     assert.ok(log.latent_after.length === simulation.persona_structure_prior.latent_dimension);
     assert.ok(log.adaptation_label);
+    assert.strictEqual(log.adaptation, "blended_development_signal");
+    assert.ok(Array.isArray(log.signal_mix));
+    assert.ok(log.signal_mix.length >= 3);
+    assert.ok(log.signal_mix.every(signal => signal.weight > 0 && signal.weight < 1));
+    assert.ok(log.signal_mix.every(signal => typeof signal.innate_weight === "number"));
+    assert.ok(log.innate_development_profile);
     assert.ok(log.prompt_evidence);
     assert.ok(log.rationale.includes(log.prompt_evidence));
   }
   for (const event of simulation.events) {
     assert.strictEqual(event.model_id, "M2_persona_to_prompt_interpreter");
+    assert.ok(event.action_probability > 0 && event.action_probability <= 1);
+    assert.ok(Array.isArray(event.action_distribution));
+    assert.strictEqual(event.action_distribution.length, 3);
+    assert.ok(Array.isArray(event.visible_action_ids));
+    assert.ok(event.visible_action_ids.length >= 2);
+    assert.ok(event.visible_action_ids.includes(event.action));
+    assert.ok(event.action_distribution.every(action => typeof action.visible === "boolean"));
+    assert.ok(event.action_distribution.every(action => action.appearance_probability > 0 && action.appearance_probability <= 1));
+    assert.ok(event.route_probability > 0 && event.route_probability <= 1);
+    assert.ok(event.route_rarity);
     assert.ok(event.prompt_evidence);
     assert.ok(event.rationale.includes(event.prompt_evidence));
   }

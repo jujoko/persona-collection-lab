@@ -28,6 +28,30 @@ const samples = [
   }
 ];
 
+const OUTCOME_TAG_LABELS = {
+  whistleblower: "고발",
+  reformer: "개혁",
+  martyr: "희생",
+  conformist: "순응",
+  opportunist: "기회주의",
+  survivor: "생존",
+  exile: "고립",
+  caregiver: "보호",
+  forgotten: "후퇴",
+  changemaker: "변화"
+};
+
+const VECTOR_TAGS = [
+  { index: 0, positive: "보호 본능", negative: "거리두기" },
+  { index: 1, positive: "불안 반응", negative: "안정 추구" },
+  { index: 2, positive: "구조 변화", negative: "규칙 회피" },
+  { index: 3, positive: "관계 개입", negative: "감정 차단" },
+  { index: 4, positive: "인정 욕구", negative: "체면 회피" },
+  { index: 5, positive: "공적 책임", negative: "사적 생존" },
+  { index: 6, positive: "의무/절차", negative: "권위 불신" },
+  { index: 7, positive: "윤리 판단", negative: "위험 회피" }
+];
+
 function loadState() {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return { characters: [], simulations: [], feedback: [] };
@@ -127,6 +151,7 @@ function getFormCharacter() {
     prompt: document.querySelector("#promptInput").value.trim()
   };
   character.id = makeCharacterId(character);
+  character.innate_seed = `INNATE_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
   character.generated_name = makeGeneratedName(character.prompt, character.id);
   character.name = character.generated_name;
   character.birth_state = "infant";
@@ -179,35 +204,18 @@ async function runSimulationWithM2(character, neuralModel) {
 
   let latent = [...infantLatent];
   const developmentalLogs = [];
+  const innateDevelopmentProfile = promptInterpretation.innate_development_profile;
   const developmentLabels = []; // Growth 결과 레이블 (World 프롬프트용)
 
   // ── Growth Phase ────────────────────────────────────────────────────────────
   for (const event of PersonaEngine.DEVELOPMENT_EVENTS) {
-    const step = PersonaEngine.buildGrowthStep(event, latent, structurePrior);
-
-    // M2 호출
-    const m2 = await callDecide("growth", {
-      character_prompt: character.prompt,
-      latent_vector: latent,
-      event_title: step.event_title,
-      event_summary: step.event_summary,
-      adaptations: step.adaptations
-    });
-
-    // M2 성공 → 그 id로 엔진 반영 / 실패 → 엔진 룰 기반 fallback
-    const adaptationId = m2?.adaptation_id ?? null;
-    const { newLatent, logTemplate } = PersonaEngine.applyAdaptationResult(
-      adaptationId, latent, event, structurePrior, character
+    const { newLatent, logTemplate } = PersonaEngine.blendDevelopmentSignals(
+      event, latent, character, structurePrior, innateDevelopmentProfile
     );
     latent = newLatent;
 
-    developmentalLogs.push({
-      ...logTemplate,
-      adaptation_label: m2?.adaptation_label ?? logTemplate.adaptation_label,
-      summary: m2?.summary ?? event.adaptations.find(a => a.id === logTemplate.adaptation)?.summary ?? "",
-      rationale: m2?.rationale ?? `"${logTemplate.prompt_evidence}" 부분이 작용했다.`
-    });
-    developmentLabels.push(m2?.adaptation_label ?? logTemplate.adaptation_label);
+    developmentalLogs.push(logTemplate);
+    developmentLabels.push(logTemplate.signal_mix?.slice(0, 3).map(signal => signal.label).join(" / ") || logTemplate.adaptation_label);
   }
 
   const latentEdges = PersonaEngine.inferLatentEdges(latent);
@@ -215,6 +223,7 @@ async function runSimulationWithM2(character, neuralModel) {
 
   // ── World Events ─────────────────────────────────────────────────────────────
   const eventResults = [];
+  let routeProbability = 1;
   for (const event of PersonaEngine.EVENTS) {
     const step = PersonaEngine.buildWorldStep(event, latent);
 
@@ -231,6 +240,7 @@ async function runSimulationWithM2(character, neuralModel) {
     const { endingWeight, eventTemplate } = PersonaEngine.applyActionResult(
       actionId, latent, event, structurePrior
     );
+    routeProbability *= eventTemplate.action_probability || 1;
 
     Object.entries(endingWeight).forEach(([key, w]) => {
       endingScores[key] = (endingScores[key] || 0) + w;
@@ -238,6 +248,8 @@ async function runSimulationWithM2(character, neuralModel) {
 
     eventResults.push({
       ...eventTemplate,
+      route_probability: Number(routeProbability.toPrecision(6)),
+      route_rarity: routeRarity(routeProbability),
       outcome: m2?.outcome ?? event.actions.find(a => a.id === eventTemplate.action)?.outcome ?? "",
       rationale: m2?.rationale ?? `"${eventTemplate.action_label}" 선택.`,
       prompt_evidence: "",
@@ -248,6 +260,11 @@ async function runSimulationWithM2(character, neuralModel) {
   eventResults[eventResults.length - 1].ending_flag = true;
   const endingKey = Object.entries(endingScores).sort((a, b) => b[1] - a[1])[0]?.[0] || "survivor";
   const ending = { ...PersonaEngine.ENDINGS[endingKey] };
+  const personaCard = PersonaEngine.summarizePersona(character, {
+    prompt_interpretation: promptInterpretation,
+    developmental_logs: developmentalLogs,
+    latent_persona: latent
+  });
 
   return {
     character_id: character.id,
@@ -261,6 +278,7 @@ async function runSimulationWithM2(character, neuralModel) {
     prompt_interpretation: promptInterpretation,
     infant_latent_persona: infantLatent,
     developmental_logs: developmentalLogs,
+    persona_card: personaCard,
     latent_persona: latent,
     latent_edges: latentEdges,
     events: eventResults,
@@ -293,6 +311,7 @@ function renderSimulation(simulation) {
         <section>
           <span class="flow-label">선택된 성장 변화</span>
           <p><b>${log.adaptation_label}</b></p>
+          ${renderSignalMix(log)}
           <p>${log.summary}</p>
         </section>
         <section>
@@ -335,6 +354,7 @@ function renderSimulation(simulation) {
   }
 
   resultList.innerHTML = `
+    ${renderPersonaBrief(simulation)}
     <div class="result-section-title">
       <p class="eyebrow">Growth Phase</p>
       <h3>아기에서 성인 직전까지의 성격 변화</h3>
@@ -374,6 +394,68 @@ function renderSimulation(simulation) {
   `;
 }
 
+function renderSignalMix(log) {
+  if (!Array.isArray(log.signal_mix) || log.signal_mix.length === 0) return "";
+  return `
+    <div class="signal-mix">
+      ${log.signal_mix.slice(0, 3).map(signal => `
+        <span>${signal.label} ${Math.round(signal.weight * 100)}%</span>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderPersonaBrief(simulation) {
+  const card = simulation.persona_card;
+  if (!card) return "";
+  const list = items => (items || []).map(item => `<li>${item}</li>`).join("");
+  const growth = (card.growth_summary || []).map(item => `
+    <li>
+      <span>${item.event_id}</span>
+      <b>${item.adaptation_label}</b>
+    </li>
+  `).join("");
+  return `
+    <article class="persona-brief-card">
+      <div class="persona-brief-head">
+        <div>
+          <p class="eyebrow">페르소나 카드</p>
+          <h3>${card.title}</h3>
+        </div>
+        <p>${card.one_line}</p>
+      </div>
+      <div class="brief-grid">
+        <section>
+          <span class="flow-label">핵심 성향</span>
+          <ul>${list(card.core_traits)}</ul>
+        </section>
+        <section>
+          <span class="flow-label">욕망</span>
+          <ul>${list(card.desires)}</ul>
+        </section>
+        <section>
+          <span class="flow-label">두려움</span>
+          <ul>${list(card.fears)}</ul>
+        </section>
+        <section>
+          <span class="flow-label">예측 힌트</span>
+          <ul>${list(card.prediction_hints)}</ul>
+        </section>
+      </div>
+      <div class="brief-footer">
+        <div>
+          <span class="flow-label">위험 신호</span>
+          <ul>${list(card.risk_signals)}</ul>
+        </div>
+        <div>
+          <span class="flow-label">성장 마커</span>
+          <ul class="growth-marker-list">${growth}</ul>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
 function ensureGameplayState(simulation) {
   const existing = simulation.gameplay || {};
   const predictions = Array.isArray(existing.predictions) ? existing.predictions : [];
@@ -404,6 +486,57 @@ function predictionFor(simulation, eventId) {
   return simulation.gameplay.predictions.find(item => item.event_id === eventId);
 }
 
+function routeRarity(probability) {
+  if (probability <= 0.00001) return "mythic";
+  if (probability <= 0.0001) return "legendary";
+  if (probability <= 0.001) return "rare";
+  if (probability <= 0.01) return "uncommon";
+  return "common";
+}
+
+function rarityLabel(rarity) {
+  return {
+    common: "흔한 루트",
+    uncommon: "드문 루트",
+    rare: "희귀 루트",
+    legendary: "전설 루트",
+    mythic: "신화 루트"
+  }[rarity] || "루트";
+}
+
+function actionReading(action, simulation, currentEvent = null) {
+  const latent = simulation.latent_persona || [];
+  const embedding = action.embedding || [];
+  const probability = currentEvent?.action_distribution?.find(item => item.id === action.id)?.probability ?? null;
+  const alignment = embedding.reduce((sum, value, index) => sum + value * (latent[index] || 0), 0) / Math.max(1, embedding.length);
+  const outcomeTags = Object.entries(action.endingWeight || {})
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 2)
+    .map(([key]) => OUTCOME_TAG_LABELS[key] || key);
+  const vectorTags = embedding
+    .map((value, index) => ({
+      label: value >= 0 ? VECTOR_TAGS[index]?.positive : VECTOR_TAGS[index]?.negative,
+      strength: Math.abs(value * (latent[index] || 0))
+    }))
+    .filter(item => item.label)
+    .sort((a, b) => b.strength - a.strength)
+    .slice(0, 2)
+    .map(item => item.label);
+  const tags = [...new Set([...outcomeTags, ...vectorTags])].slice(0, 4);
+  const fitLabel = alignment >= 0.1
+    ? "현재 페르소나와 잘 맞는 선택"
+    : alignment <= -0.1
+      ? "현재 페르소나와 충돌하는 선택"
+      : "상황에 따라 흔들릴 수 있는 선택";
+  const hint = simulation.persona_card?.prediction_hints?.[0] || "성장 과정에서 반복된 압박을 기준으로 비교해 보세요.";
+  return {
+    tags,
+    fitLabel,
+    probability,
+    hint: `${fitLabel}. ${hint}`
+  };
+}
+
 function renderPredictionPanel(simulation) {
   const total = simulation.events.length;
   const gameplay = simulation.gameplay;
@@ -423,9 +556,15 @@ function renderPredictionPanel(simulation) {
   const sourceEvent = sourceEventFor(current.event_id);
   const prediction = predictionFor(simulation, current.event_id);
   const progress = Math.round((gameplay.currentIndex / total) * 100);
-  const choices = (sourceEvent?.actions || []).map(action => {
+  const visibleActionIds = Array.isArray(current.visible_action_ids) && current.visible_action_ids.length > 0
+    ? current.visible_action_ids
+    : (sourceEvent?.actions || []).map(action => action.id);
+  const choices = (sourceEvent?.actions || [])
+    .filter(action => visibleActionIds.includes(action.id))
+    .map(action => {
     const selected = prediction?.guessed_action === action.id;
     const actual = current.action === action.id;
+    const reading = actionReading(action, simulation, current);
     const revealedClass = prediction
       ? actual ? "actual" : selected ? "missed" : ""
       : "";
@@ -439,6 +578,10 @@ function renderPredictionPanel(simulation) {
         ${prediction ? "disabled" : ""}
       >
         <b>${action.label}</b>
+        <div class="choice-tags">
+          ${reading.tags.map(tag => `<span>${tag}</span>`).join("")}
+        </div>
+        <small>${reading.hint}</small>
         <span>${action.outcome}</span>
       </button>
     `;
@@ -468,6 +611,7 @@ function renderPredictionPanel(simulation) {
         <div class="prediction-reveal ${prediction.correct ? "correct" : "wrong"}">
           <strong>${prediction.correct ? "예측 성공" : "예측 실패"}</strong>
           <p>실제 선택: <b>${current.action_label}</b></p>
+          <p class="route-probability">이번에 열린 경로: ${rarityLabel(current.route_rarity)}</p>
           <p>${current.outcome}</p>
           <blockquote>${current.rationale}</blockquote>
           <button type="button" class="primary-action" data-next-event-for="${simulation.character_id}">
@@ -504,6 +648,7 @@ function renderRevealedEvents(simulation) {
           <section>
             <span class="flow-label">페르소나 반응</span>
             <p><b>${event.action_label}</b></p>
+            <p class="route-probability">이번에 열린 경로: ${rarityLabel(event.route_rarity)}</p>
             <p>${event.outcome}</p>
           </section>
           <section>
@@ -526,6 +671,7 @@ function renderGameSummary(simulation) {
   const total = simulation.events.length;
   const correct = simulation.gameplay.predictions.filter(item => item.correct).length;
   const accuracy = Math.round((correct / Math.max(1, total)) * 100);
+  const finalRoute = simulation.events.at(-1);
   const rows = simulation.gameplay.predictions.map(item => {
     const event = simulation.events.find(candidate => candidate.event_id === item.event_id);
     const guessed = sourceEventFor(item.event_id)?.actions.find(action => action.id === item.guessed_action);
@@ -547,6 +693,7 @@ function renderGameSummary(simulation) {
         <div class="score-pills">
           <span>${correct}/${total} 적중</span>
           <span>${simulation.gameplay.score}점</span>
+          <span>${rarityLabel(finalRoute?.route_rarity)}</span>
         </div>
       </div>
       ${rows}

@@ -15,5 +15,11 @@ const index = await readFile("public/index.html", "utf8");
 const app = await readFile("public/app.js", "utf8");
 assert.equal(index.includes("예측 캠페인"), true, "index.html should describe the prediction campaign");
 assert.equal(app.includes("data-predict-character-id"), true, "app.js should render prediction choices");
+assert.equal(app.includes("persona-brief-card"), true, "app.js should render the persona briefing card");
+assert.equal(app.includes("예측 힌트"), true, "app.js should show prediction hints before choices");
+assert.equal(app.includes("choice-tags"), true, "app.js should render choice-level reasoning tags");
+assert.equal(app.includes("choice-probability"), false, "app.js should not reveal raw choice probabilities");
+assert.equal(app.includes("visible_action_ids"), true, "app.js should render only surfaced choices");
+assert.equal(app.includes("route_probability"), true, "app.js should track route probability");
 
 console.log("content.test.mjs: ok");
