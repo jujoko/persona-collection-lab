@@ -17,7 +17,7 @@ LLM 기반 페르소나 생성·시뮬레이션 연구를 위한 게임형 데�
 
 ## 전체 진행도
 
-> **65%** — Play Model 학습 중, ML inference 서버 연동 완료, 배포 준비 단계
+> **75%** — 배포 이미지 검증 완료, Hugging Face Spaces 무료 배포 준비 중 (2026-06-15 기준)
 
 | 영역 | 진행 바 | % |
 |---|---|---|
@@ -28,9 +28,9 @@ LLM 기반 페르소나 생성·시뮬레이션 연구를 위한 게임형 데�
 | M1 학습 | `██████████` | 100% |
 | M1 서버 연동 | `██████████` | 100% |
 | Play Model 설계 | `██████████` | 100% |
-| Play Model 학습 | `██████░░░░` | 60% |
+| Play Model 학습 (Phase 1) | `██████████` | 100% |
 | Play Model 서버 연동 | `██████████` | 100% |
-| Fly.io 배포 | `██░░░░░░░░` | 20% |
+| Hugging Face Spaces 배포 | `███████░░░` | 70% |
 | 유저 피드백 수집 | `░░░░░░░░░░` | 0% |
 | M3 schema 분석 | `░░░░░░░░░░` | 0% |
 | M2 KV injection 학습 | `░░░░░░░░░░` | 0% |
@@ -46,7 +46,7 @@ LLM 기반 페르소나 생성·시뮬레이션 연구를 위한 게임형 데�
 | 모델 | 상태 | 비고 |
 |---|---|---|
 | **M1** | ✅ 학습 완료 + 서버 연동 완료 | `ml/m1_adapter.pt` — `/api/persona` 엔드포인트 활성 |
-| **Play Model** | 🔄 학습 중 | `ml/train_play_model.py` 실행 중 — 완료 후 `/api/play_action` 활성 |
+| **Play Model** | ✅ Phase 1 완료 + 서버 연동 완료 | 20 epochs, `/api/play_action` 검증 완료 |
 | **M2** | 🔶 rule-based 동작 중 | action embedding 미검증 — 배포 후 피드백으로 학습 예정 |
 | **M3** | 🔶 규칙 기반 bootstrap | 데이터 수집 후 schema discovery 예정 |
 
@@ -76,12 +76,18 @@ LLM 기반 페르소나 생성·시뮬레이션 연구를 위한 게임형 데�
 ### 다음 작업 순서
 
 ```
-Play Model 학습 완료 대기
-→ Fly.io 배포
-→ 유저 피드백 수집
+[완료] Play Model Phase 1 및 Docker 통합 검증
+→ 모델 가중치 저장소 업로드 + Hugging Face Spaces secrets 설정
+→ 공개 배포 및 /api/health 확인
+→ Supabase 마이그레이션 실행 (docs/claude/supabase_migration.sql)
+→ 유저 피드백 500+ 수집
 → M3 schema 분석 → action embedding 재설정
 → M2 KV injection 학습
 ```
+
+> 인수인계 문서: [`docs/codex/2026-06-15-handoff.md`](docs/codex/2026-06-15-handoff.md)
+> 무료 배포 검토: [`docs/codex/free-hosting-review.md`](docs/codex/free-hosting-review.md)
+> Play Model 벤치마크: [`docs/codex/play-model-benchmark.md`](docs/codex/play-model-benchmark.md)
 
 ### 구현된 것
 
@@ -93,7 +99,7 @@ Play Model 학습 완료 대기
 | 엔딩 | 10종 (survivor/whistleblower/conformist/reformer/exile/caregiver/opportunist/martyr/forgotten/changemaker) |
 | 잠재 벡터 | 8차원 latent persona (z0~z7) |
 | M1 가중치 | `ml/m1_adapter.pt` (Triplet Loss, Nemotron 5K) — `/api/persona` 연동 완료 |
-| Play Model | `ml/play_model.pt` (학습 중) — klue/roberta-base fine-tune, skills/hobbies head |
+| Play Model | `ml/play_model.pt` (Phase 1 완료) — klue/roberta-base + skills/hobbies head |
 | M2 | rule-based cosine similarity (KV injection 설계 완료) |
 | M3 | 규칙 기반 bootstrap (schema discovery 스크립트 준비됨) |
 | ML inference 서버 | `ml/inference_server.py` (Python, port 8788) — M1 + Play Model |
@@ -101,12 +107,11 @@ Play Model 학습 완료 대기
 | 피드백 학습 | 브라우저 내 gradient update |
 | 재시뮬레이션 | 피드백 반영 후 재실행 + 비교 카드 |
 | 데이터 저장 | localStorage + Supabase |
-| 배포 설정 | Fly.io (`fly.toml`) |
+| 배포 설정 | Hugging Face Docker Spaces (주), Fly.io (유료 fallback) |
 
 ### 아직 없는 것
 
-- M1 서버 연동 (학습된 adapter를 server.mjs에서 로드)
-- Fly.io 실제 배포
+- Hugging Face Spaces secrets 설정 및 공개 배포
 - 유저 피드백 기반 M2 학습
 - M3 데이터 기반 schema discovery
 - LLM 동적 서술 생성
@@ -130,7 +135,8 @@ npm start
 
 ```
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key-here
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+EXPORT_TOKEN=your-long-random-token
 ```
 
 ### 서버 없이 실행
@@ -200,11 +206,19 @@ Nemotron-Personas-Korea (1M 한국인 페르소나)
 | `simulations` | 성장 로그, 사건별 행동, 엔딩 |
 | `feedback` | 사건별 피드백 신호, latent 변화 전후 |
 
-전체 데이터 조회: `GET /api/export`
+전체 데이터 조회: `Authorization: Bearer <EXPORT_TOKEN>` 헤더가 포함된 `GET /api/export`
 
 ---
 
 ## 최근 업데이트
+
+### 2026-06-15
+- **Codex 인수인계 문서 작성** — [`docs/codex/2026-06-15-handoff.md`](docs/codex/2026-06-15-handoff.md)
+- **Play Model Phase 1 검증 완료** — 20 epochs, M1 및 `/api/play_action` smoke test 통과
+- **학습 파이프라인 보강** — phase별 체크포인트, 샘플 크기별 캐시, stratified sampling 테스트 추가
+- **배포 이미지 검증 완료** — 11초 부팅, 최대 1.40GiB, 이미지 1.41GB
+- **배포 보안 보강** — `/api/export` bearer token 보호, 운영 Supabase readiness 확인
+- **Transformers.js 보안 업데이트** — 공식 `@huggingface/transformers`로 전환, npm audit 0건
 
 ### 2026-06-11
 - **ML inference 서버 추가** — `ml/inference_server.py` (Python, port 8788)
@@ -330,10 +344,11 @@ python ml/train_m2.py --data ml/synthetic_training_data.jsonl
 
 ### 장기 (모델 학습)
 
-#### Fly.io 배포
-- `fly launch` + `fly secrets set` 으로 배포
-- 배포 후 `/api/health` 엔드포인트로 Supabase 비활성 방지 ping 설정
-- 공개 URL로 다른 사람도 플레이 가능하게
+#### Hugging Face Spaces 배포
+- 무료 CPU Basic(2 vCPU, 16GB RAM) Docker Space 사용
+- private 모델 저장소와 Space secrets 연결
+- GitHub Actions로 `main` 검증 후 Space 동기화
+- 무료 Space는 미사용 시 sleep하므로 첫 접속 cold start 허용
 
 #### M3 실제 딥러닝 학습
 현재 M3는 규칙 기반 bootstrap이다. 데이터가 충분히 쌓이면 실제 학습 모델로 교체한다.

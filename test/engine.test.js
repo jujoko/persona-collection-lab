@@ -4,13 +4,13 @@ const engine = require("../public/engine");
 const characters = [
   {
     id: "C_TEST_1",
-    generated_name: "엘리안",
-    prompt: "전쟁 중 태어난 아이. 아버지는 엄격한 기사였고 어머니는 굶주린 이웃을 몰래 도왔다. 어린 시절에는 자주 버려질까 두려워했고, 커서는 왕국의 기사로 인정받고 싶어 한다. 겁이 많지만 친구를 버리지 못한다."
+    generated_name: "민준",
+    prompt: "서울 외곽의 형편이 어려운 가정에서 자랐다. 아버지는 성적과 규율에 엄격했고 어머니는 형편이 더 어려운 이웃을 자주 도왔다. 안정적인 직장을 원하지만 부당한 일을 보면 외면하지 못한다."
   },
   {
     id: "C_TEST_2",
-    generated_name: "세라핀",
-    prompt: "귀족 가문에서 태어난 아이. 부모는 아이를 사랑했지만 가문의 명예와 성취를 더 중시했다. 어릴 때부터 마법과 정치 교육을 받았고, 인정받지 못하면 버려질 수 있다는 압박을 느꼈다. 커서는 금지된 힘으로 전쟁을 끝내고 싶어 한다."
+    generated_name: "서연",
+    prompt: "전문직 가정에서 자랐고 부모는 성취와 체면을 중시했다. 코딩과 토론을 잘하며 실패하면 인정받지 못할까 두려워한다. 기술 창업으로 사회 문제를 해결하고 싶지만 성공에 대한 집착도 강하다."
   }
 ];
 
@@ -26,7 +26,7 @@ for (const character of characters) {
   assert.ok(simulation.prompt_interpretation.prompt_fragments.length > 0);
   assert.strictEqual(simulation.infant_latent_persona.length, simulation.persona_structure_prior.latent_dimension);
   assert.strictEqual(simulation.developmental_logs.length, 4);
-  assert.strictEqual(simulation.events.length, 5);
+  assert.strictEqual(simulation.events.length, 10);
   assert.ok(simulation.ending.id.startsWith("END_"));
   assert.strictEqual(simulation.latent_persona.length, simulation.persona_structure_prior.latent_dimension);
   assert.ok(simulation.latent_edges.length > 0);
@@ -63,7 +63,7 @@ for (const character of characters) {
     "test_rerun",
     neuralModel
   );
-  assert.strictEqual(dynamicRun.events.length, 5);
+  assert.strictEqual(dynamicRun.events.length, 10);
   assert.strictEqual(dynamicRun.run_label, "test_rerun");
   assert.strictEqual(dynamicRun.latent_persona.length, simulation.persona_structure_prior.latent_dimension);
   assert.ok(dynamicRun.ending.id.startsWith("END_"));

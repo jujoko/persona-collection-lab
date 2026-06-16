@@ -1,12 +1,32 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
-);
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  || process.env.SUPABASE_ANON_KEY;
+const supabaseConfigured = Boolean(process.env.SUPABASE_URL && supabaseKey);
+const supabasePrivileged = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+const supabase = supabaseConfigured
+  ? createClient(process.env.SUPABASE_URL, supabaseKey, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    })
+  : null;
+
+function requireSupabase() {
+  if (!supabase) {
+    throw new Error("Supabase is not configured");
+  }
+  return supabase;
+}
+
+export function isSupabaseConfigured() {
+  return supabaseConfigured;
+}
+
+export function isSupabasePrivileged() {
+  return supabasePrivileged;
+}
 
 export async function insertCharacter(character) {
-  const { error } = await supabase.from("characters").upsert({
+  const { error } = await requireSupabase().from("characters").upsert({
     id: character.id,
     prompt: character.prompt,
     generated_name: character.generated_name,
@@ -32,7 +52,7 @@ export async function insertSimulation(simulation) {
     phase: e.phase
   }));
 
-  const { error } = await supabase.from("simulations").upsert({
+  const { error } = await requireSupabase().from("simulations").upsert({
     id: simulation.character_id + "_" + Date.now(),
     character_id: simulation.character_id,
     ending_id: simulation.ending?.id ?? null,
@@ -47,7 +67,7 @@ export async function insertSimulation(simulation) {
 }
 
 export async function insertFeedback(feedback) {
-  const { error } = await supabase.from("feedback").upsert({
+  const { error } = await requireSupabase().from("feedback").upsert({
     id: feedback.character_id + "_" + feedback.event_id + "_" + Date.now(),
     character_id: feedback.character_id,
     event_id: feedback.event_id,
@@ -62,10 +82,11 @@ export async function insertFeedback(feedback) {
 }
 
 export async function exportAll() {
+  const client = requireSupabase();
   const [c, s, f] = await Promise.all([
-    supabase.from("characters").select("*"),
-    supabase.from("simulations").select("*"),
-    supabase.from("feedback").select("*")
+    client.from("characters").select("*"),
+    client.from("simulations").select("*"),
+    client.from("feedback").select("*")
   ]);
   return {
     characters: c.data ?? [],

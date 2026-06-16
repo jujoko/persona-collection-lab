@@ -156,6 +156,7 @@
     {
       id: "ME001",
       title: "내부 고발",
+      chapter: "Act 1 · 균열",
       type: "whistleblowing_dilemma",
       summary: "팀장이 회계 자료를 조작해 부당이득을 취하고 있다는 증거를 우연히 발견했다. 신고하면 회사가 살지만 팀장과 동료들이 위험해진다. 침묵하면 부정이 계속된다.",
       tags: ["조직", "정직", "용기"],
@@ -190,6 +191,7 @@
     {
       id: "ME002",
       title: "가족의 빚",
+      chapter: "Act 1 · 균열",
       type: "family_loyalty_dilemma",
       summary: "부모님이 사기를 당해 집을 잃을 위기다. 지인이 불법 대출 브로커를 소개해준다. 합법 경로로는 시간이 없고, 불법 경로는 빠르지만 전과 위험이 있다.",
       tags: ["가족", "법", "선택"],
@@ -224,6 +226,7 @@
     {
       id: "ME003",
       title: "자원 배분",
+      chapter: "Act 2 · 압박",
       type: "scarcity_allocation",
       summary: "소규모 의료 봉사팀으로 재난 현장에 도착했다. 의약품이 부족하다. 중증 노인 환자에게 쓰면 한 명을 살릴 수 있고, 경증 어린이 10명에게 나누면 모두를 안정시킬 수 있다.",
       tags: ["생명", "공정", "책임"],
@@ -258,6 +261,7 @@
     {
       id: "ME004",
       title: "금지된 방법",
+      chapter: "Act 2 · 압박",
       type: "forbidden_means",
       summary: "억울하게 구속된 지인의 무죄를 증명할 증거가 회사 서버 안에 있다. 해킹하면 증거를 꺼낼 수 있지만 불법이다. 합법적 절차는 너무 느려 재판에 늦는다.",
       tags: ["정의", "규범", "수단"],
@@ -292,6 +296,7 @@
     {
       id: "ME005",
       title: "조직의 압력",
+      chapter: "Act 3 · 선택의 대가",
       type: "authority_vs_conscience",
       summary: "팀장이 허위 데이터로 보고서를 꾸미라고 지시한다. 거절하면 불이익이 예상되고, 따르면 회사 전체가 잘못된 의사결정을 한다.",
       tags: ["권위", "양심", "직장"],
@@ -320,6 +325,181 @@
           bias: -0.02,
           outcome: "리스크가 있지만, 조직 내 정당한 경로로 문제를 해결한다.",
           endingWeight: { reformer: 2, changemaker: 1, whistleblower: 1 }
+        }
+      ]
+    },
+    {
+      id: "ME006",
+      title: "친구의 부탁",
+      chapter: "Act 3 · 선택의 대가",
+      type: "friendship_vs_integrity",
+      summary: "오랜 친구가 채용 심사에서 자기 이력을 좋게 말해 달라고 부탁한다. 실제로는 큰 프로젝트 실패를 숨기고 있다. 도와주면 친구는 살아나지만, 팀은 위험한 사람을 뽑을 수 있다.",
+      tags: ["우정", "정직", "책임"],
+      event_embedding: [0.36, 0.18, 0.12, 0.62, -0.12, 0.24, 0.28, 0.42],
+      actions: [
+        {
+          id: "protects_friend",
+          label: "친구를 위해 좋은 말만 해준다",
+          embedding: [0.62, 0.46, -0.26, 0.72, 0.16, -0.18, -0.22, -0.28],
+          bias: 0.03,
+          outcome: "친구는 기회를 얻지만, 나중에 문제가 터질 가능성을 떠안는다.",
+          endingWeight: { caregiver: 2, opportunist: 1, survivor: 1 }
+        },
+        {
+          id: "tells_balanced_truth",
+          label: "장점과 실패를 모두 솔직히 말한다",
+          embedding: [0.34, -0.28, 0.58, 0.38, -0.14, 0.46, 0.48, 0.66],
+          bias: 0,
+          outcome: "친구와 잠시 멀어지지만, 관계와 책임을 모두 지키려 한다.",
+          endingWeight: { reformer: 2, whistleblower: 1, caregiver: 1 }
+        },
+        {
+          id: "refuses_reference",
+          label: "추천 자체를 거절한다",
+          embedding: [-0.18, -0.12, 0.42, -0.2, 0.1, 0.54, 0.68, 0.38],
+          bias: -0.01,
+          outcome: "책임을 피했다는 비난을 받지만, 직접 거짓말하지는 않는다.",
+          endingWeight: { survivor: 2, exile: 1, conformist: 1 }
+        }
+      ]
+    },
+    {
+      id: "ME007",
+      title: "알고리즘의 차별",
+      chapter: "Act 4 · 구조",
+      type: "algorithmic_bias",
+      summary: "회사 추천 알고리즘이 특정 지역 출신 지원자를 낮게 평가한다는 정황을 발견했다. 수정하면 출시가 늦고 투자자가 떠날 수 있다. 그대로 내보내면 차별이 자동화된다.",
+      tags: ["기술", "차별", "구조"],
+      event_embedding: [-0.22, 0.08, 0.76, 0.18, 0.7, -0.1, -0.3, 0.28],
+      actions: [
+        {
+          id: "ships_anyway",
+          label: "문제를 기록만 하고 출시를 강행한다",
+          embedding: [-0.36, 0.3, -0.44, -0.24, 0.48, -0.22, 0.54, -0.5],
+          bias: 0.03,
+          outcome: "성과는 얻지만, 차별을 방치한 책임이 남는다.",
+          endingWeight: { opportunist: 3, conformist: 2 }
+        },
+        {
+          id: "delays_release",
+          label: "출시를 늦추고 편향을 수정한다",
+          embedding: [0.24, -0.24, 0.58, 0.32, 0.52, 0.56, 0.18, 0.64],
+          bias: 0,
+          outcome: "투자자와 갈등하지만, 시스템이 사람을 해치지 않게 막는다.",
+          endingWeight: { reformer: 2, changemaker: 2, martyr: 1 }
+        },
+        {
+          id: "opens_audit",
+          label: "외부 감사를 받아 공개적으로 검증한다",
+          embedding: [0.18, -0.32, 0.72, 0.24, 0.62, 0.42, -0.18, 0.78],
+          bias: -0.02,
+          outcome: "회사는 흔들리지만, 문제를 공적 기준으로 끌어올린다.",
+          endingWeight: { whistleblower: 2, changemaker: 2, reformer: 1 }
+        }
+      ]
+    },
+    {
+      id: "ME008",
+      title: "돌봄의 한계",
+      chapter: "Act 4 · 구조",
+      type: "care_burnout",
+      summary: "가족의 장기 간병과 직장 프로젝트 마감이 같은 주에 겹쳤다. 한쪽을 선택하면 다른 쪽은 크게 무너진다. 주변은 각자의 책임만 요구한다.",
+      tags: ["가족", "소진", "책임"],
+      event_embedding: [0.52, 0.44, -0.18, 0.72, -0.24, 0.18, 0.32, -0.08],
+      actions: [
+        {
+          id: "chooses_family_care",
+          label: "일을 내려놓고 가족을 돌본다",
+          embedding: [0.72, 0.28, -0.2, 0.82, -0.26, 0.12, 0.16, -0.14],
+          bias: 0.02,
+          outcome: "가족은 버틸 수 있지만, 경력과 생계가 크게 흔들린다.",
+          endingWeight: { caregiver: 3, martyr: 1, forgotten: 1 }
+        },
+        {
+          id: "chooses_work_deadline",
+          label: "프로젝트를 끝내고 간병은 다른 사람에게 맡긴다",
+          embedding: [-0.18, 0.18, 0.08, -0.36, 0.58, -0.16, 0.42, -0.48],
+          bias: 0.03,
+          outcome: "성과는 지키지만 가족 안에 오래 남을 상처가 생긴다.",
+          endingWeight: { opportunist: 1, conformist: 1, survivor: 2 }
+        },
+        {
+          id: "asks_for_support_network",
+          label: "도움을 요청하고 역할을 재배치한다",
+          embedding: [0.46, -0.18, 0.36, 0.58, 0.16, 0.58, 0.34, 0.52],
+          bias: -0.02,
+          outcome: "완벽하지는 않지만, 혼자 떠안지 않는 구조를 만든다.",
+          endingWeight: { caregiver: 2, reformer: 1, changemaker: 1 }
+        }
+      ]
+    },
+    {
+      id: "ME009",
+      title: "여론의 재판",
+      chapter: "Act 5 · 공개",
+      type: "public_shaming",
+      summary: "과거의 말 한마디가 잘려 퍼지며 온라인에서 공격을 받는다. 해명하면 더 번질 수 있고, 침묵하면 인정한 것처럼 보인다. 주변 사람들도 거리두기를 시작했다.",
+      tags: ["평판", "두려움", "공개"],
+      event_embedding: [-0.38, 0.62, 0.18, -0.12, 0.46, -0.46, 0.12, -0.34],
+      actions: [
+        {
+          id: "apologizes_publicly",
+          label: "잘못을 인정하고 공개적으로 사과한다",
+          embedding: [0.28, -0.28, 0.36, 0.42, -0.18, 0.5, 0.48, 0.56],
+          bias: 0,
+          outcome: "일부는 진심을 인정하지만, 공격은 한동안 계속된다.",
+          endingWeight: { reformer: 1, caregiver: 1, survivor: 1 }
+        },
+        {
+          id: "counterattacks_crowd",
+          label: "공격한 사람들을 역으로 폭로한다",
+          embedding: [-0.52, 0.54, 0.62, -0.34, 0.64, -0.58, -0.44, -0.5],
+          bias: 0.04,
+          outcome: "전선은 넓어지고, 이긴다 해도 많은 것을 잃는다.",
+          endingWeight: { exile: 2, opportunist: 1, martyr: 1 }
+        },
+        {
+          id: "goes_private_and_repairs",
+          label: "공개 대응을 줄이고 당사자에게 직접 수습한다",
+          embedding: [0.34, -0.16, 0.12, 0.58, -0.22, 0.36, 0.2, 0.28],
+          bias: -0.01,
+          outcome: "화려한 반전은 없지만, 실제 관계부터 복구한다.",
+          endingWeight: { caregiver: 1, survivor: 2, forgotten: 1 }
+        }
+      ]
+    },
+    {
+      id: "ME010",
+      title: "마지막 제안",
+      chapter: "Act 5 · 공개",
+      type: "final_compromise",
+      summary: "모든 사건 뒤, 큰 조직이 조용한 자리를 제안한다. 받아들이면 안전과 영향력을 얻지만 지금까지의 문제 제기를 멈춰야 한다. 거절하면 불안정하지만 자기 길을 유지한다.",
+      tags: ["권력", "안전", "정체성"],
+      event_embedding: [-0.18, 0.34, 0.68, -0.08, 0.76, -0.18, 0.5, 0.18],
+      actions: [
+        {
+          id: "accepts_compromise",
+          label: "제안을 받아들이고 내부에서 움직인다",
+          embedding: [-0.12, 0.18, 0.24, 0.04, 0.58, 0.18, 0.56, 0.18],
+          bias: 0.02,
+          outcome: "안정된 자리와 영향력을 얻지만, 날카로운 목소리는 작아진다.",
+          endingWeight: { conformist: 2, survivor: 2, reformer: 1 }
+        },
+        {
+          id: "rejects_compromise",
+          label: "제안을 거절하고 독립적으로 남는다",
+          embedding: [0.18, -0.32, 0.72, 0.16, 0.34, 0.28, -0.62, 0.74],
+          bias: 0,
+          outcome: "불안정하지만 지금까지의 선택을 끝까지 책임진다.",
+          endingWeight: { whistleblower: 2, exile: 1, martyr: 1, changemaker: 1 }
+        },
+        {
+          id: "uses_offer_publicly",
+          label: "제안 내용을 공개해 협상 카드로 쓴다",
+          embedding: [0.08, -0.2, 0.82, 0.22, 0.7, 0.18, -0.36, 0.66],
+          bias: -0.01,
+          outcome: "큰 파장을 만들며 판을 흔들지만, 돌아갈 길도 사라진다.",
+          endingWeight: { changemaker: 3, whistleblower: 2, exile: 1 }
         }
       ]
     }
@@ -812,6 +992,7 @@
       });
       return {
         event_id: event.id,
+        chapter: event.chapter,
         model_id: interpretation.model_id,
         based_on_model: interpretation.based_on_model,
         event_type: event.type,
@@ -885,6 +1066,7 @@
       const rationale = interpretation.rationale;
       return {
         event_id: event.id,
+        chapter: event.chapter,
         model_id: interpretation.model_id,
         based_on_model: interpretation.based_on_model,
         event_type: event.type,
@@ -1032,6 +1214,7 @@
       endingWeight: action.endingWeight,
       eventTemplate: {
         event_id: event.id,
+        chapter: event.chapter,
         model_id: MODEL_REGISTRY.persona_to_prompt_model.id,
         based_on_model: structurePrior.model_id,
         event_type: event.type,

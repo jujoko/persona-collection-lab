@@ -12,6 +12,7 @@ ml/build_report.json
 # 모델 가중치 (HF Hub에 별도 저장)
 ml/m1_adapter.pt
 ml/play_model.pt
+ml/play_model_benchmark.json
 
 # Python
 __pycache__/
@@ -21,3 +22,4 @@ __pycache__/
 # 기타
 .DS_Store
 *.log
+Persona Collection Game.zip
