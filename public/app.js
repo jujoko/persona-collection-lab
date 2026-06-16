@@ -130,6 +130,71 @@ function makeGeneratedName(prompt, id, requestedName = "") {
   return DEFAULT_NAME_POOL[index];
 }
 
+const AVATAR_PALETTES = [
+  { bg: "#dfeee8", skin: "#f0c6a4", hair: "#2f241f", cloth: "#2f6f5e", ring: "#6ba58f" },
+  { bg: "#efe4d2", skin: "#d9a77f", hair: "#3b2b24", cloth: "#7b4f34", ring: "#bb8b2f" },
+  { bg: "#e8e2f1", skin: "#e6b998", hair: "#1f2633", cloth: "#5d4c83", ring: "#8975b7" },
+  { bg: "#f0e0df", skin: "#f2c9ad", hair: "#4b2d2a", cloth: "#9f3447", ring: "#c86f7a" },
+  { bg: "#e5edf5", skin: "#c98f70", hair: "#191919", cloth: "#385d7a", ring: "#7398b7" },
+  { bg: "#f4ead7", skin: "#f4d0b7", hair: "#6b442f", cloth: "#5f6f42", ring: "#9aaa65" }
+];
+
+function pickFrom(list, seed, salt) {
+  return list[PersonaEngine.hashText(`${seed}:${salt}`) % list.length];
+}
+
+function renderAvatar(simulation, size = "large") {
+  const character = simulation.character || {};
+  const latent = simulation.latent_persona || simulation.infant_latent_persona || [];
+  const identitySeed = `${character.id || "character"}|${character.generated_name || character.name || ""}|${character.innate_seed || ""}`;
+  const palette = pickFrom(AVATAR_PALETTES, identitySeed, "palette");
+  const avatarId = `${String(character.id || "avatar").replace(/[^A-Za-z0-9_-]/g, "")}-${size}`;
+  const hairStyle = PersonaEngine.hashText(`${identitySeed}:hair`) % 4;
+  const faceWidth = 23 + (PersonaEngine.hashText(`${identitySeed}:face-width`) % 8);
+  const faceHeight = 29 + (PersonaEngine.hashText(`${identitySeed}:face-height`) % 7);
+  const eyeGap = 8 + (PersonaEngine.hashText(`${identitySeed}:eye-gap`) % 5);
+  const eyeY = 46 + (PersonaEngine.hashText(`${identitySeed}:eye-y`) % 4);
+  const mouthMood = Math.max(-1, Math.min(1, (latent[0] || 0) - (latent[1] || 0) + (latent[5] || 0) * 0.4));
+  const mouthCurve = Number((54 + mouthMood * 4).toFixed(2));
+  const browTilt = Number((((latent[4] || 0) - (latent[6] || 0)) * 3).toFixed(2));
+  const ringWidth = Number((2.5 + Math.min(4, Math.abs(latent[5] || 0) * 6)).toFixed(2));
+  const patternOffset = PersonaEngine.hashText(`${identitySeed}:pattern`) % 24;
+  const hairPaths = [
+    `<path d="M29 42c1-19 14-27 31-24 15 3 24 14 20 31-8-9-18-13-30-13-9 0-15 2-21 6Z" fill="${palette.hair}"/>`,
+    `<path d="M26 45c2-21 18-30 34-26 13 3 22 13 20 30-7-6-13-9-22-11-13-3-22 0-32 7Z" fill="${palette.hair}"/>`,
+    `<path d="M31 38c5-17 19-24 34-18 11 4 17 15 15 29-8-10-18-15-30-15-8 0-14 1-19 4Z" fill="${palette.hair}"/>`,
+    `<path d="M25 49c0-23 15-33 33-30 18 3 26 17 23 36-7-12-18-17-33-17-10 0-17 4-23 11Z" fill="${palette.hair}"/>`
+  ];
+
+  return `
+    <div class="persona-avatar persona-avatar-${size}" aria-label="${character.generated_name || "캐릭터"} 아바타" role="img">
+      <svg viewBox="0 0 100 118" focusable="false">
+        <defs>
+          <clipPath id="avatarClip-${avatarId}">
+            <rect x="4" y="4" width="92" height="110" rx="22"></rect>
+          </clipPath>
+        </defs>
+        <rect x="4" y="4" width="92" height="110" rx="22" fill="${palette.bg}"></rect>
+        <g clip-path="url(#avatarClip-${avatarId})">
+          <path d="M${12 + patternOffset} 10 L${-22 + patternOffset} 120" stroke="${palette.ring}" stroke-opacity="0.24" stroke-width="8"/>
+          <path d="M${46 + patternOffset} 0 L${12 + patternOffset} 122" stroke="#fffaf1" stroke-opacity="0.32" stroke-width="5"/>
+          <path d="M0 99 C22 86 78 86 100 99 L100 118 L0 118 Z" fill="${palette.cloth}"/>
+          <path d="M38 78 C42 85 58 85 62 78 L65 103 L35 103 Z" fill="${palette.skin}"/>
+          ${hairPaths[hairStyle]}
+          <ellipse cx="50" cy="51" rx="${faceWidth}" ry="${faceHeight}" fill="${palette.skin}"/>
+          <path d="M${50 - eyeGap - 5} ${eyeY - browTilt} L${50 - eyeGap + 5} ${eyeY - 1 + browTilt}" stroke="${palette.hair}" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M${50 + eyeGap - 5} ${eyeY - 1 - browTilt} L${50 + eyeGap + 5} ${eyeY + browTilt}" stroke="${palette.hair}" stroke-width="2.4" stroke-linecap="round"/>
+          <circle cx="${50 - eyeGap}" cy="${eyeY + 5}" r="2.3" fill="#221f1c"/>
+          <circle cx="${50 + eyeGap}" cy="${eyeY + 5}" r="2.3" fill="#221f1c"/>
+          <path d="M50 52 C47 58 48 62 53 63" fill="none" stroke="#7c5948" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M42 ${mouthCurve} C47 ${mouthCurve + 3} 54 ${mouthCurve + 3} 59 ${mouthCurve}" fill="none" stroke="#6e3f3d" stroke-width="2.1" stroke-linecap="round"/>
+        </g>
+        <rect x="4" y="4" width="92" height="110" rx="22" fill="none" stroke="${palette.ring}" stroke-width="${ringWidth}"/>
+      </svg>
+    </div>
+  `;
+}
+
 function embeddingEndpoints() {
   const endpoints = [];
   if (location.protocol.startsWith("http")) {
@@ -403,10 +468,13 @@ function renderSimulation(simulation) {
     ${dynamicRuns}
     ${simulation.gameplay.completed ? `
       <article class="ending-card">
-        <div>
-          <p class="eyebrow">Ending</p>
-          <h2>${simulation.character.generated_name}: ${ending.title}</h2>
-          <p>${ending.social_memory}. 세계 영향도는 ${ending.world_impact}, 생존 여부는 ${ending.survived ? "생존" : "사망"}입니다.</p>
+        <div class="ending-copy">
+          ${renderAvatar(simulation, "small")}
+          <div>
+            <p class="eyebrow">Ending</p>
+            <h2>${simulation.character.generated_name}: ${ending.title}</h2>
+            <p>${ending.social_memory}. 세계 영향도는 ${ending.world_impact}, 생존 여부는 ${ending.survived ? "생존" : "사망"}입니다.</p>
+          </div>
         </div>
         <div class="ending-badge">${ending.id}</div>
       </article>
@@ -438,9 +506,12 @@ function renderPersonaBrief(simulation) {
   return `
     <article class="persona-brief-card">
       <div class="persona-brief-head">
-        <div>
-          <p class="eyebrow">페르소나 카드</p>
-          <h3>${card.title}</h3>
+        <div class="persona-brief-identity">
+          ${renderAvatar(simulation)}
+          <div>
+            <p class="eyebrow">페르소나 카드</p>
+            <h3>${card.title}</h3>
+          </div>
         </div>
         <p>${card.one_line}</p>
       </div>

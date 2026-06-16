@@ -440,6 +440,38 @@ textarea:focus {
   align-items: start;
 }
 
+.persona-brief-identity,
+.ending-copy {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.persona-avatar {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 22px;
+  background: #fffaf1;
+  box-shadow: 0 10px 24px rgba(49, 43, 36, 0.16);
+}
+
+.persona-avatar svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.persona-avatar-large {
+  width: 116px;
+}
+
+.persona-avatar-small {
+  width: 76px;
+  border-radius: 18px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+}
+
 .persona-brief-head h3 {
   margin: 0;
   font-size: 1.25rem;
