@@ -463,4 +463,8 @@ const ARC2_HIGHSCHOOL = {
   ]
 };
 
-module.exports = ARC2_HIGHSCHOOL;
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = ARC2_HIGHSCHOOL;
+} else {
+  globalThis.ARC2_HIGHSCHOOL = ARC2_HIGHSCHOOL;
+}

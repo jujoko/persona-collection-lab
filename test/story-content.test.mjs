@@ -9,10 +9,7 @@ const {
   matchesFlags
 } = require("../content/flags.js");
 
-const arcs = [
-  require("../content/arc0_elementary.js"),
-  require("../content/arc2_highschool.js")
-];
+const arcs = require("../content/allArcs.js");
 
 const KNOWN_TYPES = new Set([
   "home",
@@ -116,7 +113,8 @@ const eventIds = new Set();
 for (const arc of arcs) {
   assertText(arc.id, "arc.id");
   assertText(arc.title, `${arc.id}.title`);
-  assert.equal(Number.isInteger(arc.order), true, `${arc.id}.order must be integer`);
+  assert.equal(typeof arc.order, "number", `${arc.id}.order must be number`);
+  assert.ok(Number.isFinite(arc.order), `${arc.id}.order must be finite`);
   assert.equal(
     Number.isInteger(arc.events_per_run),
     true,

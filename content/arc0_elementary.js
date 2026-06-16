@@ -365,4 +365,8 @@ const ARC0_ELEMENTARY = {
   ]
 };
 
-module.exports = ARC0_ELEMENTARY;
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = ARC0_ELEMENTARY;
+} else {
+  globalThis.ARC0_ELEMENTARY = ARC0_ELEMENTARY;
+}

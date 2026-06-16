@@ -306,9 +306,28 @@ async function runSimulationWithM2(character, neuralModel) {
   const endingScores = {};
 
   // ── World Events ─────────────────────────────────────────────────────────────
+  // 스토리 어댑터가 로드됐으면 아크 이벤트 사용, 아니면 엔진 기본 이벤트 사용
+  const availableArcs = (typeof STORY_ARCS !== "undefined")
+    ? STORY_ARCS
+    : [
+      typeof ARC0_ELEMENTARY !== "undefined" ? ARC0_ELEMENTARY : null,
+      typeof ARC2_HIGHSCHOOL !== "undefined" ? ARC2_HIGHSCHOOL : null
+    ].filter(Boolean);
+
+  const useStoryArcs = typeof StoryAdapter !== "undefined" && availableArcs.length > 0;
+  const storyRun = useStoryArcs
+    ? StoryAdapter.createRun(availableArcs, { innateSeed: character.innate_seed })
+    : null;
+  const worldEvents = useStoryArcs ? null : PersonaEngine.EVENTS;
+
   const eventResults = [];
   let routeProbability = 1;
-  for (const event of PersonaEngine.EVENTS) {
+  while (true) {
+    const event = useStoryArcs
+      ? storyRun.nextEvent()
+      : worldEvents[eventResults.length];
+    if (!event) break;
+
     const step = PersonaEngine.buildWorldStep(event, latent);
 
     const m2 = await callDecide("world", {
@@ -327,6 +346,12 @@ async function runSimulationWithM2(character, neuralModel) {
     latent = eventTemplate.latent_after || latent;
     routeProbability *= eventTemplate.action_probability || 1;
 
+    // 스토리 플래그 업데이트 (어댑터 이벤트에만 해당)
+    if (useStoryArcs) {
+      const chosenAction = event.actions?.find(a => a.id === eventTemplate.action);
+      storyRun.applyAction(chosenAction);
+    }
+
     Object.entries(endingWeight).forEach(([key, w]) => {
       endingScores[key] = (endingScores[key] || 0) + w;
     });
@@ -342,7 +367,9 @@ async function runSimulationWithM2(character, neuralModel) {
     });
   }
 
-  eventResults[eventResults.length - 1].ending_flag = true;
+  if (eventResults.length > 0) {
+    eventResults[eventResults.length - 1].ending_flag = true;
+  }
   const endingKey = Object.entries(endingScores).sort((a, b) => b[1] - a[1])[0]?.[0] || "survivor";
   const ending = { ...PersonaEngine.ENDINGS[endingKey] };
   const personaCard = PersonaEngine.summarizePersona(character, {
@@ -368,6 +395,7 @@ async function runSimulationWithM2(character, neuralModel) {
     latent_edges: latentEdges,
     events: eventResults,
     ending,
+    story_flags: useStoryArcs ? storyRun.getFlags() : {},
     feedback_updates: []
   };
 }

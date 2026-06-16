@@ -1,0 +1,24 @@
+Persona research deliverables QA notes
+Date: 2026-06-17
+
+Paper:
+- DOCX generated at outputs/research/persona_simulation_research_paper_ko.docx.
+- LibreOffice-based DOCX render was attempted but failed because soffice is not installed in the current environment.
+- PDF was generated directly from the DOCX content with ReportLab using a Korean TrueType font.
+- Verified PDF page count: 6 pages.
+- Verified PDF text extraction includes Korean title/body content.
+
+Presentation:
+- Editable PPTX was generated with @oai/artifact-tool.
+- 12 slide PNG previews were exported with artifact-tool.
+- Representative slide previews checked visually: slide 02, slide 07, slide 12.
+- Presentation PDF was generated from artifact-tool slide PNG previews.
+- Verified presentation PDF page count: 12 pages.
+
+Sources used:
+- Local repo docs: STORY_SPEC.md, docs/claude/persona_simulation_research_context.md, docs/codex/play-model-benchmark.md.
+- CharacterGPT arXiv 2405.19778.
+- STORY2GAME arXiv 2505.03547.
+- Word2World arXiv 2405.06686.
+- Bringing Stories Alive arXiv 2001.10161.
+- Gamification / self-determination theory references listed in the paper bibliography.

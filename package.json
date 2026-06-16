@@ -7,7 +7,7 @@
   },
   "scripts": {
     "start": "node --env-file=.env src/server.mjs",
-    "test": "node test/engine.test.js && node test/content.test.mjs && node test/story-content.test.mjs && node test/server.test.mjs"
+    "test": "node test/engine.test.js && node test/content.test.mjs && node test/story-content.test.mjs && node test/server.test.mjs && node test/story-adapter.test.mjs"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",

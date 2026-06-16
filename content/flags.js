@@ -117,8 +117,8 @@ function matchesFlags(flags, requires = {}, excludes = {}) {
   return true;
 }
 
-module.exports = {
-  FLAG_DEFINITIONS,
-  FLAG_DEFAULTS,
-  matchesFlags
-};
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { FLAG_DEFINITIONS, FLAG_DEFAULTS, matchesFlags };
+} else {
+  globalThis.StoryFlags = { FLAG_DEFINITIONS, FLAG_DEFAULTS, matchesFlags };
+}
