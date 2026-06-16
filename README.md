@@ -17,7 +17,7 @@ LLM 기반 페르소나 생성·시뮬레이션 연구를 위한 게임형 데�
 
 ## 전체 진행도
 
-> **75%** — 배포 이미지 검증 완료, Hugging Face Spaces 무료 배포 준비 중 (2026-06-15 기준)
+> **85%** — Hugging Face Spaces 배포 및 Supabase 저장 검증 완료 (2026-06-16 기준)
 
 | 영역 | 진행 바 | % |
 |---|---|---|
@@ -30,16 +30,35 @@ LLM 기반 페르소나 생성·시뮬레이션 연구를 위한 게임형 데�
 | Play Model 설계 | `██████████` | 100% |
 | Play Model 학습 (Phase 1) | `██████████` | 100% |
 | Play Model 서버 연동 | `██████████` | 100% |
-| Hugging Face Spaces 배포 | `███████░░░` | 70% |
-| 유저 피드백 수집 | `░░░░░░░░░░` | 0% |
+| Hugging Face Spaces 배포 | `██████████` | 100% |
+| 유저 피드백 수집 | `█░░░░░░░░░` | 10% |
 | M3 schema 분석 | `░░░░░░░░░░` | 0% |
 | M2 KV injection 학습 | `░░░░░░░░░░` | 0% |
 | LLM 서술 연동 | `░░░░░░░░░░` | 0% |
-| 캐릭터 비교 / 공유 | `░░░░░░░░░░` | 0% |
+| 엔딩 리포트 / 분석 UX | `░░░░░░░░░░` | 0% |
 
 ---
 
-## 현재 상태 (v0.2.3)
+## 현재 상태 (2026-06-16)
+
+### 운영 URL
+
+- 배포: https://jujoko-persona-collection-lab.hf.space/
+- 모델 저장소: https://huggingface.co/jujoko/persona-collection-lab-models
+- GitHub: https://github.com/jujoko/persona-collection-lab
+
+### 2026-06-16 운영 검증
+
+- Hugging Face Docker Space가 `main` 최신 merge 커밋으로 빌드 및 실행됨.
+- `/api/health` 정상:
+  - `m1_available: true`
+  - `play_model_available: true`
+  - `supabase_configured: true`
+  - `supabase_privileged: true`
+- `/api/embed` 384차원 임베딩 응답 확인.
+- `/api/persona` 8차원 latent 응답 확인.
+- `/api/characters`, `/api/simulations`, `/api/feedback` Supabase 저장 확인.
+- Space 로그에서 `[DB] ... ok` 저장 로그 확인.
 
 ### 모델별 현황
 
@@ -76,11 +95,12 @@ LLM 기반 페르소나 생성·시뮬레이션 연구를 위한 게임형 데�
 ### 다음 작업 순서
 
 ```
-[완료] Play Model Phase 1 및 Docker 통합 검증
-→ 모델 가중치 저장소 업로드 + Hugging Face Spaces secrets 설정
-→ 공개 배포 및 /api/health 확인
-→ Supabase 마이그레이션 실행 (docs/claude/supabase_migration.sql)
-→ 유저 피드백 500+ 수집
+[완료] Hugging Face Spaces 공개 배포
+[완료] 모델 가중치 저장소 업로드
+[완료] Supabase service role 저장 검증
+→ 실제 유저 플레이/피드백 데이터 수집
+→ 엔딩 리포트 및 결과 화면 강화
+→ 관리자 데이터 분석 화면 추가
 → M3 schema 분석 → action embedding 재설정
 → M2 KV injection 학습
 ```
@@ -88,6 +108,7 @@ LLM 기반 페르소나 생성·시뮬레이션 연구를 위한 게임형 데�
 > 인수인계 문서: [`docs/codex/2026-06-15-handoff.md`](docs/codex/2026-06-15-handoff.md)
 > 무료 배포 검토: [`docs/codex/free-hosting-review.md`](docs/codex/free-hosting-review.md)
 > Play Model 벤치마크: [`docs/codex/play-model-benchmark.md`](docs/codex/play-model-benchmark.md)
+> 배포/저장 운영 기록: [`docs/codex/2026-06-16-deployment-and-storage.md`](docs/codex/2026-06-16-deployment-and-storage.md)
 
 ### 구현된 것
 
@@ -95,7 +116,7 @@ LLM 기반 페르소나 생성·시뮬레이션 연구를 위한 게임형 데�
 |---|---|
 | **배경** | 현대 한국 (직장·가족·사회 딜레마) |
 | 성장 사건 | G001~G004 (유아기→청년기, 현대 한국 단서어) |
-| 성인기 사건 | ME001~ME005 (내부고발·가족의빚·자원배분·금지된방법·조직의압력) |
+| 성인기 사건 | ME001~ME010 (5 Act 연속 현대 딜레마 캠페인) |
 | 엔딩 | 10종 (survivor/whistleblower/conformist/reformer/exile/caregiver/opportunist/martyr/forgotten/changemaker) |
 | 잠재 벡터 | 8차원 latent persona (z0~z7) |
 | M1 가중치 | `ml/m1_adapter.pt` (Triplet Loss, Nemotron 5K) — `/api/persona` 연동 완료 |
@@ -106,14 +127,17 @@ LLM 기반 페르소나 생성·시뮬레이션 연구를 위한 게임형 데�
 | 임베딩 서버 | Xenova/all-MiniLM-L6-v2 (Node.js, port 8787) |
 | 피드백 학습 | 브라우저 내 gradient update |
 | 재시뮬레이션 | 피드백 반영 후 재실행 + 비교 카드 |
-| 데이터 저장 | localStorage + Supabase |
-| 배포 설정 | Hugging Face Docker Spaces (주), Fly.io (유료 fallback) |
+| 예측 캠페인 | 사건별 행동 예측, 점수, 연속 적중, 최종 이해도 리포트 |
+| 데이터 저장 | localStorage + Supabase service role 서버 저장 |
+| 배포 설정 | Hugging Face Docker Spaces 운영 중, Fly.io는 유료 fallback |
 
 ### 아직 없는 것
 
-- Hugging Face Spaces secrets 설정 및 공개 배포
-- 유저 피드백 기반 M2 학습
+- 충분한 실제 유저 피드백 데이터
+- 엔딩/결과 리포트 강화
+- 관리자 분석 대시보드
 - M3 데이터 기반 schema discovery
+- 유저 피드백 기반 M2 학습
 - LLM 동적 서술 생성
 
 ---
@@ -156,8 +180,10 @@ start index.html
   → (서버) all-MiniLM-L6-v2 → 384차원 임베딩
   → M1: 8차원 latent seed 생성 (아기 상태)
   → G001~G004 성장 사건 (현대 한국 맥락, latent 변화 로그)
-  → ME001~ME005 성인기 사건 (현대 도덕 딜레마, 행동 결정)
-  → 결과 카드 + 엔딩 (10종)
+  → ME001~ME010 연속 사건 캠페인
+  → 유저가 캐릭터 행동 예측
+  → 실제 행동 공개 + 점수/연속 적중 계산
+  → 최종 이해도 리포트 + 엔딩 (10종)
   → 유저 피드백 → action encoder gradient update
   → 재시뮬레이션 비교
   → localStorage + Supabase 저장
@@ -212,6 +238,13 @@ Nemotron-Personas-Korea (1M 한국인 페르소나)
 
 ## 최근 업데이트
 
+### 2026-06-16
+- **Hugging Face Spaces 배포 완료** — Docker Space `jujoko/persona-collection-lab`가 `main` 최신 커밋으로 실행 중.
+- **모델 저장소 완성** — `m1_adapter.pt`, `play_model.pt` 모두 `jujoko/persona-collection-lab-models`에 업로드.
+- **Supabase 운영 저장 복구** — `SUPABASE_SERVICE_ROLE_KEY`, `REQUIRE_SUPABASE=1`, `REQUIRE_SERVICE_ROLE=1` 적용 후 저장 API 3종 검증.
+- **예측 캠페인 게임 루프 추가** — ME001~ME010 10개 연속 사건, 행동 예측, 점수, 연속 적중, 최종 이해도 리포트 추가.
+- **배포 보안 강화** — 요청 크기 제한, API rate limit, 보안 헤더, export bearer token, health readiness 적용.
+
 ### 2026-06-15
 - **Codex 인수인계 문서 작성** — [`docs/codex/2026-06-15-handoff.md`](docs/codex/2026-06-15-handoff.md)
 - **Play Model Phase 1 검증 완료** — 20 epochs, M1 및 `/api/play_action` smoke test 통과
@@ -259,9 +292,21 @@ Nemotron-Personas-Korea (1M 한국인 페르소나)
 
 ### 단기 (합성 데이터 + 학습)
 
-#### Supabase 마이그레이션 실행
-`docs/claude/supabase_migration.sql`을 Supabase SQL Editor(service role 필요)에서 실행.  
-prompt_embedding / latent_seed / infant_latent / final_latent 컬럼이 추가된다.
+#### 실제 플레이 데이터 수집
+배포 URL을 통해 캐릭터 생성, 예측 캠페인, 피드백을 수집한다.
+
+- 목표: 최소 50명 플레이 / 500개 피드백 레코드
+- 확인: Space 로그의 `[DB] ... ok`, Supabase 테이블 row 증가
+- 이후 M3 schema discovery와 M2 학습 데이터로 사용
+
+#### 엔딩 리포트 강화
+현재 최종 화면은 이해도와 엔딩만 요약한다. 플레이 보상을 강화하려면 결과를 더 읽고 싶게 만들어야 한다.
+
+- 가장 많이 빗나간 사건
+- 캐릭터 핵심 성향 3개 요약
+- 엔딩별 장문 서사
+- 캐릭터의 선택 궤적 타임라인
+- “내가 이해한 캐릭터 vs 모델이 본 캐릭터” 비교
 
 #### 합성 학습 데이터 생성
 ```bash
@@ -278,13 +323,13 @@ python ml/train_m2.py --data ml/synthetic_training_data.jsonl
 
 ### 단기 (콘텐츠 + 플레이 동기)
 
-#### 사건 확장
-현재 5개 현대 사건(ME001~ME005)은 반복 플레이 시 금방 익숙해진다.  
-다양한 캐릭터 간 행동 차이를 수집하려면 사건 수와 유형이 늘어야 한다.
+#### 사건 확장 2차
+현재는 ME001~ME010 10개 사건이 있다. 반복 플레이를 위해 사건 pool을 더 늘리고 매 회차 일부만 뽑는 구조가 필요하다.
 
-- 사건 10~15개로 확장 (직장 외 가족·사회·정치 영역 추가)
-- 사건 유형 다양화: 관계 갈등, 정체성 위기, 권력 유혹 등
-- 사건 태그 기반 분류 (triggered_traits 기반 필터링)
+- 사건 20~30개 pool 구성
+- 캠페인당 8~10개 샘플링
+- 사건 태그 기반 분기: 가족형 / 직장형 / 기술형 / 공적 책임형
+- 선택 결과가 다음 사건 문구에 반영되는 연속성 추가
 
 #### LLM 서술 연동
 현재 행동 결과 텍스트가 고정 문자열이라 캐릭터마다 동일하게 출력된다. LLM으로 캐릭터의 latent vector를 반영한 동적 서술을 생성하면 플레이 동기가 크게 높아진다.
@@ -343,12 +388,6 @@ python ml/train_m2.py --data ml/synthetic_training_data.jsonl
 ---
 
 ### 장기 (모델 학습)
-
-#### Hugging Face Spaces 배포
-- 무료 CPU Basic(2 vCPU, 16GB RAM) Docker Space 사용
-- private 모델 저장소와 Space secrets 연결
-- GitHub Actions로 `main` 검증 후 Space 동기화
-- 무료 Space는 미사용 시 sleep하므로 첫 접속 cold start 허용
 
 #### M3 실제 딥러닝 학습
 현재 M3는 규칙 기반 bootstrap이다. 데이터가 충분히 쌓이면 실제 학습 모델로 교체한다.
