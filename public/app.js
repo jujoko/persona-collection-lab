@@ -271,6 +271,7 @@ async function runSimulationWithM2(character, neuralModel) {
 
 function renderSimulation(simulation) {
   emptyState.style.display = "none";
+  ensureGameplayState(simulation);
   activeCharacterBadge.textContent = simulation.character.generated_name;
   renderLatentBars(simulation.latent_persona, simulation.persona_structure_prior.latent_dimensions);
   drawNetwork(simulation.latent_persona, simulation.latent_edges, simulation.persona_structure_prior.latent_dimensions);
@@ -327,42 +328,6 @@ function renderSimulation(simulation) {
     </article>
   `;
 
-  const eventCards = simulation.events.map(event => `
-    <article class="result-card" data-event-id="${event.event_id}">
-      <div class="card-title-row">
-        <div class="result-meta">
-          <span>${event.event_id}</span>
-          <span>${event.event_type}</span>
-        </div>
-        <strong>${event.event_title}</strong>
-      </div>
-      <div class="event-flow">
-        <section>
-          <span class="flow-label">사건 압력</span>
-          <p>${event.event_summary}</p>
-        </section>
-        <section>
-          <span class="flow-label">페르소나 반응</span>
-          <p><b>${event.action_label}</b></p>
-          <p>${event.outcome}</p>
-        </section>
-        <section>
-          <span class="flow-label">프롬프트 근거</span>
-          <blockquote>${event.prompt_evidence}</blockquote>
-        </section>
-        <section>
-          <span class="flow-label">판단</span>
-          <p data-narrate-target="${simulation.character_id}-${event.event_id}">${event.rationale}</p>
-        </section>
-      </div>
-      <div class="feedback-row">
-        <button type="button" data-feedback="consistent" data-character-id="${simulation.character_id}" data-event-id="${event.event_id}">완전 캐릭터다</button>
-        <button type="button" data-feedback="ambiguous" data-character-id="${simulation.character_id}" data-event-id="${event.event_id}">조금 애매함</button>
-        <button type="button" data-feedback="wrong" data-character-id="${simulation.character_id}" data-event-id="${event.event_id}">전혀 아님</button>
-      </div>
-    </article>
-  `).join("");
-
   const ending = simulation.ending;
   const dynamicRuns = simulation.dynamic_runs?.map(run => renderDynamicRun(simulation, run)).join("") || "";
   if (adminModelPanel) {
@@ -376,29 +341,215 @@ function renderSimulation(simulation) {
     </div>
     ${developmentCards}
     <div class="result-section-title">
-      <p class="eyebrow">World Events</p>
-      <h3>현재 페르소나가 사건과 만났을 때</h3>
+      <p class="eyebrow">Prediction Campaign</p>
+      <h3>연속 사건에서 캐릭터의 선택을 예측하세요</h3>
     </div>
-    ${eventCards}
-    <article class="result-card dynamic-control-card">
-      <div>
-        <div class="result-meta">
-          <span>Dynamic</span>
-          <span>Feedback Loop</span>
+    ${renderPredictionPanel(simulation)}
+    ${renderRevealedEvents(simulation)}
+    ${renderGameSummary(simulation)}
+    ${simulation.gameplay.completed ? `
+      <article class="result-card dynamic-control-card">
+        <div>
+          <div class="result-meta">
+            <span>Dynamic</span>
+            <span>Feedback Loop</span>
+          </div>
+          <strong>학습 반영 후 재시뮬레이션</strong>
         </div>
-        <strong>학습 반영 후 재시뮬레이션</strong>
-      </div>
-      <p>피드백으로 바뀐 현재 잠재 구조를 사용해 성장 이후의 성인기 사건만 다시 실행합니다. 이전 행동과 달라진 지점이 비교 로그로 남습니다.</p>
-      <button type="button" class="primary-action" data-rerun-character-id="${simulation.character_id}">현재 페르소나로 다시 실행</button>
-    </article>
+        <p>피드백으로 바뀐 현재 잠재 구조를 사용해 성장 이후의 성인기 사건만 다시 실행합니다. 이전 행동과 달라진 지점이 비교 로그로 남습니다.</p>
+        <button type="button" class="primary-action" data-rerun-character-id="${simulation.character_id}">현재 페르소나로 다시 실행</button>
+      </article>
+    ` : ""}
     ${dynamicRuns}
-    <article class="ending-card">
-      <div>
-        <p class="eyebrow">Ending</p>
-        <h2>${simulation.character.generated_name}: ${ending.title}</h2>
-        <p>${ending.social_memory}. 세계 영향도는 ${ending.world_impact}, 생존 여부는 ${ending.survived ? "생존" : "사망"}입니다.</p>
+    ${simulation.gameplay.completed ? `
+      <article class="ending-card">
+        <div>
+          <p class="eyebrow">Ending</p>
+          <h2>${simulation.character.generated_name}: ${ending.title}</h2>
+          <p>${ending.social_memory}. 세계 영향도는 ${ending.world_impact}, 생존 여부는 ${ending.survived ? "생존" : "사망"}입니다.</p>
+        </div>
+        <div class="ending-badge">${ending.id}</div>
+      </article>
+    ` : ""}
+  `;
+}
+
+function ensureGameplayState(simulation) {
+  const existing = simulation.gameplay || {};
+  const predictions = Array.isArray(existing.predictions) ? existing.predictions : [];
+  const currentIndex = Math.min(Number(existing.currentIndex || 0), simulation.events.length);
+  simulation.gameplay = {
+    currentIndex,
+    predictions,
+    score: predictions.reduce((sum, item) => sum + (item.points || 0), 0),
+    streak: computeCurrentStreak(predictions),
+    completed: currentIndex >= simulation.events.length
+  };
+}
+
+function computeCurrentStreak(predictions) {
+  let streak = 0;
+  for (let index = predictions.length - 1; index >= 0; index -= 1) {
+    if (!predictions[index].correct) break;
+    streak += 1;
+  }
+  return streak;
+}
+
+function sourceEventFor(eventId) {
+  return PersonaEngine.EVENTS.find(event => event.id === eventId);
+}
+
+function predictionFor(simulation, eventId) {
+  return simulation.gameplay.predictions.find(item => item.event_id === eventId);
+}
+
+function renderPredictionPanel(simulation) {
+  const total = simulation.events.length;
+  const gameplay = simulation.gameplay;
+  const current = simulation.events[gameplay.currentIndex];
+  if (!current) {
+    return `
+      <article class="prediction-card completed">
+        <div>
+          <p class="eyebrow">Campaign Complete</p>
+          <h3>모든 사건을 통과했습니다</h3>
+        </div>
+        <p>${simulation.character.generated_name}의 선택을 ${gameplay.predictions.filter(item => item.correct).length}/${total}개 맞혔습니다.</p>
+      </article>
+    `;
+  }
+
+  const sourceEvent = sourceEventFor(current.event_id);
+  const prediction = predictionFor(simulation, current.event_id);
+  const progress = Math.round((gameplay.currentIndex / total) * 100);
+  const choices = (sourceEvent?.actions || []).map(action => {
+    const selected = prediction?.guessed_action === action.id;
+    const actual = current.action === action.id;
+    const revealedClass = prediction
+      ? actual ? "actual" : selected ? "missed" : ""
+      : "";
+    return `
+      <button
+        type="button"
+        class="choice-button ${selected ? "selected" : ""} ${revealedClass}"
+        data-predict-character-id="${simulation.character_id}"
+        data-event-id="${current.event_id}"
+        data-action-id="${action.id}"
+        ${prediction ? "disabled" : ""}
+      >
+        <b>${action.label}</b>
+        <span>${action.outcome}</span>
+      </button>
+    `;
+  }).join("");
+
+  return `
+    <article class="prediction-card" data-current-event="${current.event_id}">
+      <div class="prediction-scoreboard">
+        <div>
+          <p class="eyebrow">${current.chapter || "World Event"}</p>
+          <h3>${current.event_id}. ${current.event_title}</h3>
+        </div>
+        <div class="score-pills">
+          <span>점수 ${gameplay.score}</span>
+          <span>연속 ${gameplay.streak}</span>
+          <span>${gameplay.currentIndex + 1}/${total}</span>
+        </div>
       </div>
-      <div class="ending-badge">${ending.id}</div>
+      <div class="progress-track" aria-label="사건 진행도">
+        <div style="width:${progress}%"></div>
+      </div>
+      <p class="event-summary">${current.event_summary}</p>
+      <div class="choice-grid">
+        ${choices}
+      </div>
+      ${prediction ? `
+        <div class="prediction-reveal ${prediction.correct ? "correct" : "wrong"}">
+          <strong>${prediction.correct ? "예측 성공" : "예측 실패"}</strong>
+          <p>실제 선택: <b>${current.action_label}</b></p>
+          <p>${current.outcome}</p>
+          <blockquote>${current.rationale}</blockquote>
+          <button type="button" class="primary-action" data-next-event-for="${simulation.character_id}">
+            ${gameplay.currentIndex + 1 >= total ? "최종 엔딩 보기" : "다음 사건으로"}
+          </button>
+        </div>
+      ` : `
+        <p class="prediction-hint">캐릭터가 어떤 선택을 할지 먼저 맞혀보세요. 정답은 잠재 페르소나와 사건 임베딩으로 결정됩니다.</p>
+      `}
+    </article>
+  `;
+}
+
+function renderRevealedEvents(simulation) {
+  const revealed = simulation.events.slice(0, simulation.gameplay.currentIndex);
+  if (revealed.length === 0) return "";
+  return revealed.map(event => {
+    const prediction = predictionFor(simulation, event.event_id);
+    return `
+      <article class="result-card revealed-event-card" data-event-id="${event.event_id}">
+        <div class="card-title-row">
+          <div class="result-meta">
+            <span>${event.chapter || "World Event"}</span>
+            <span>${event.event_id}</span>
+            <span>${prediction?.correct ? "예측 성공" : "예측 실패"}</span>
+          </div>
+          <strong>${event.event_title}</strong>
+        </div>
+        <div class="event-flow">
+          <section>
+            <span class="flow-label">사건 압력</span>
+            <p>${event.event_summary}</p>
+          </section>
+          <section>
+            <span class="flow-label">페르소나 반응</span>
+            <p><b>${event.action_label}</b></p>
+            <p>${event.outcome}</p>
+          </section>
+          <section>
+            <span class="flow-label">프롬프트 근거</span>
+            <blockquote>${event.prompt_evidence}</blockquote>
+          </section>
+        </div>
+        <div class="feedback-row">
+          <button type="button" data-feedback="consistent" data-character-id="${simulation.character_id}" data-event-id="${event.event_id}">완전 캐릭터다</button>
+          <button type="button" data-feedback="ambiguous" data-character-id="${simulation.character_id}" data-event-id="${event.event_id}">조금 애매함</button>
+          <button type="button" data-feedback="wrong" data-character-id="${simulation.character_id}" data-event-id="${event.event_id}">전혀 아님</button>
+        </div>
+      </article>
+    `;
+  }).reverse().join("");
+}
+
+function renderGameSummary(simulation) {
+  if (!simulation.gameplay.completed) return "";
+  const total = simulation.events.length;
+  const correct = simulation.gameplay.predictions.filter(item => item.correct).length;
+  const accuracy = Math.round((correct / Math.max(1, total)) * 100);
+  const rows = simulation.gameplay.predictions.map(item => {
+    const event = simulation.events.find(candidate => candidate.event_id === item.event_id);
+    const guessed = sourceEventFor(item.event_id)?.actions.find(action => action.id === item.guessed_action);
+    return `
+      <div class="score-row ${item.correct ? "correct" : "wrong"}">
+        <span>${item.event_id}</span>
+        <p>${event?.event_title || item.event_id}: ${guessed?.label || "-"} → ${event?.action_label || "-"}</p>
+        <b>${item.points}점</b>
+      </div>
+    `;
+  }).join("");
+  return `
+    <article class="result-card score-summary-card">
+      <div class="prediction-scoreboard">
+        <div>
+          <p class="eyebrow">Insight Score</p>
+          <strong>캐릭터 이해도 ${accuracy}%</strong>
+        </div>
+        <div class="score-pills">
+          <span>${correct}/${total} 적중</span>
+          <span>${simulation.gameplay.score}점</span>
+        </div>
+      </div>
+      ${rows}
     </article>
   `;
 }
@@ -538,6 +689,7 @@ function renderDataset() {
     latest_latent_persona: latest?.latent_persona ?? null,
     latest_latent_edges: latest?.latent_edges ?? [],
     latest_dynamic_runs: latest?.dynamic_runs ?? [],
+    latest_gameplay: latest?.gameplay ?? null,
     behavior_logs: state.simulations.flatMap(sim => sim.events.map(event => ({
       character_id: sim.character_id,
       event_id: event.event_id,
@@ -613,6 +765,43 @@ form.addEventListener("submit", async event => {
 });
 
 resultList.addEventListener("click", event => {
+  const predictionButton = event.target.closest("[data-predict-character-id]");
+  if (predictionButton) {
+    const simulation = findSimulation(predictionButton.dataset.predictCharacterId);
+    if (!simulation) return;
+    ensureGameplayState(simulation);
+    const eventLog = simulation.events[simulation.gameplay.currentIndex];
+    if (!eventLog || eventLog.event_id !== predictionButton.dataset.eventId) return;
+    if (predictionFor(simulation, eventLog.event_id)) return;
+    const correct = eventLog.action === predictionButton.dataset.actionId;
+    const streakBefore = computeCurrentStreak(simulation.gameplay.predictions);
+    const points = correct ? 10 + Math.min(streakBefore, 5) * 2 : 0;
+    simulation.gameplay.predictions.push({
+      event_id: eventLog.event_id,
+      guessed_action: predictionButton.dataset.actionId,
+      actual_action: eventLog.action,
+      correct,
+      points,
+      created_at: new Date().toISOString()
+    });
+    ensureGameplayState(simulation);
+    renderSimulation(simulation);
+    saveState();
+    return;
+  }
+
+  const nextButton = event.target.closest("[data-next-event-for]");
+  if (nextButton) {
+    const simulation = findSimulation(nextButton.dataset.nextEventFor);
+    if (!simulation) return;
+    ensureGameplayState(simulation);
+    simulation.gameplay.currentIndex = Math.min(simulation.gameplay.currentIndex + 1, simulation.events.length);
+    simulation.gameplay.completed = simulation.gameplay.currentIndex >= simulation.events.length;
+    renderSimulation(simulation);
+    saveState();
+    return;
+  }
+
   const rerunButton = event.target.closest("[data-rerun-character-id]");
   if (rerunButton) {
     const simulation = findSimulation(rerunButton.dataset.rerunCharacterId);

@@ -11,4 +11,9 @@ for (const file of files) {
   }
 }
 
+const index = await readFile("public/index.html", "utf8");
+const app = await readFile("public/app.js", "utf8");
+assert.equal(index.includes("예측 캠페인"), true, "index.html should describe the prediction campaign");
+assert.equal(app.includes("data-predict-character-id"), true, "app.js should render prediction choices");
+
 console.log("content.test.mjs: ok");

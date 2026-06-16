@@ -30,7 +30,7 @@
         <div class="world-copy">
           <p class="eyebrow">World W002 · Modern Korea</p>
           <h2>압박 속의 현대 사회</h2>
-          <p>가족, 직장, 법, 생존이 충돌하는 현대 한국의 딜레마에 캐릭터를 투입합니다. 유저는 선택지를 고르지 않고, 캐릭터의 잠재 페르소나 벡터가 사건·행동 임베딩과 상호작용하며 어떤 결과를 만드는지 관찰합니다.</p>
+          <p>가족, 직장, 법, 기술, 평판, 돌봄이 충돌하는 현대 한국의 연속 딜레마에 캐릭터를 투입합니다. 유저는 사건마다 캐릭터의 행동을 먼저 예측하고, 잠재 페르소나가 실제로 어떤 선택을 만드는지 맞혀봅니다.</p>
           <div class="world-tags">
             <span>생존</span>
             <span>도덕</span>
@@ -66,21 +66,21 @@
               <span>현대 사회의 역할</span>
             </div>
 
-            <button id="submitBtn" class="primary-action" type="submit">자동 시뮬레이션 실행</button>
+            <button id="submitBtn" class="primary-action" type="submit">예측 캠페인 시작</button>
           </form>
 
           <section class="panel results-panel">
             <div class="panel-head">
               <div>
-                <p class="eyebrow">Simulation Result</p>
-                <h2>사건 로그</h2>
+                <p class="eyebrow">Prediction Campaign</p>
+                <h2>연속 사건</h2>
               </div>
               <div class="result-controls">
                 <button id="compareBtn" type="button">최근 캐릭터 비교</button>
               </div>
             </div>
             <div id="emptyState" class="empty-state">
-              프롬프트를 입력하면 인물은 아기 상태의 잠재 씨앗에서 시작합니다. 양육·환경 사건으로 latent persona가 변한 뒤 5개의 고정 사건이 자동 실행됩니다.
+              프롬프트를 입력하면 인물은 아기 상태의 잠재 씨앗에서 시작합니다. 양육·환경 사건으로 latent persona가 변한 뒤 10개의 연속 사건이 열리고, 당신은 매 사건마다 캐릭터의 선택을 예측합니다.
             </div>
             <div id="resultList" class="result-list"></div>
           </section>

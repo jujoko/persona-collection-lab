@@ -26,7 +26,7 @@ for (const character of characters) {
   assert.ok(simulation.prompt_interpretation.prompt_fragments.length > 0);
   assert.strictEqual(simulation.infant_latent_persona.length, simulation.persona_structure_prior.latent_dimension);
   assert.strictEqual(simulation.developmental_logs.length, 4);
-  assert.strictEqual(simulation.events.length, 5);
+  assert.strictEqual(simulation.events.length, 10);
   assert.ok(simulation.ending.id.startsWith("END_"));
   assert.strictEqual(simulation.latent_persona.length, simulation.persona_structure_prior.latent_dimension);
   assert.ok(simulation.latent_edges.length > 0);
@@ -63,7 +63,7 @@ for (const character of characters) {
     "test_rerun",
     neuralModel
   );
-  assert.strictEqual(dynamicRun.events.length, 5);
+  assert.strictEqual(dynamicRun.events.length, 10);
   assert.strictEqual(dynamicRun.run_label, "test_rerun");
   assert.strictEqual(dynamicRun.latent_persona.length, simulation.persona_structure_prior.latent_dimension);
   assert.ok(dynamicRun.ending.id.startsWith("END_"));
