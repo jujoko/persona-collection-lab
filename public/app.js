@@ -240,6 +240,7 @@ async function runSimulationWithM2(character, neuralModel) {
     const { endingWeight, eventTemplate } = PersonaEngine.applyActionResult(
       actionId, latent, event, structurePrior
     );
+    latent = eventTemplate.latent_after || latent;
     routeProbability *= eventTemplate.action_probability || 1;
 
     Object.entries(endingWeight).forEach(([key, w]) => {

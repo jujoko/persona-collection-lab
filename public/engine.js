@@ -704,6 +704,42 @@
     return encoded;
   }
 
+  function seededNormal(seed) {
+    const u1 = Math.max(seededUnit(`${seed}:u1`), 0.000001);
+    const u2 = seededUnit(`${seed}:u2`);
+    return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  }
+
+  function createInitialPersonaState(character, schema = { latent_dimensions: LATENT_DIMS }, neuralModel = null) {
+    const promptText = characterText(character);
+    const mu = encodePromptToLatent(character, schema, neuralModel);
+    const tokens = tokenize(promptText);
+    const promptClarity = Math.min(1, tokens.length / 28);
+    const baseUncertainty = 0.42 - promptClarity * 0.16;
+    const innateSeed = String(character.innate_seed || `${character.id || "anonymous"}|${promptText}|m1-init`);
+    const sigma = mu.map(value =>
+      clamp(baseUncertainty + (1 - Math.abs(value)) * 0.18, 0.12, 0.58)
+    );
+    const innateNoise = sigma.map((_, index) =>
+      clamp(seededNormal(`${innateSeed}:z${index}`), -2.25, 2.25)
+    );
+    const z0 = normalize(mu.map((value, index) =>
+      clamp(value + sigma[index] * innateNoise[index] * 0.42)
+    ));
+    return {
+      model_id: MODEL_REGISTRY.prompt_to_persona_model.id,
+      distribution_type: "prompt_conditioned_gaussian",
+      prompt_anchor: mu,
+      mu,
+      sigma,
+      innate_noise: innateNoise,
+      z0,
+      innate_seed: innateSeed,
+      prompt_uncertainty: Number(baseUncertainty.toFixed(4)),
+      initialization_rule: "z0 = normalize(mu(prompt) + sigma(prompt) * innate_noise)"
+    };
+  }
+
   function createInnateDevelopmentProfile(character) {
     const seed = String(character.innate_seed || `${character.id || "anonymous"}|${character.free_text_length || 0}|innate-growth`);
     return DEVELOPMENT_EVENTS.map(event => {
@@ -777,9 +813,10 @@
 
   function interpretPromptToPersona(character, structurePrior = getPersonaStructurePrior(character), neuralModel = null) {
     const promptText = characterText(character);
-    const promptLatent = encodePromptToLatent(character, structurePrior, neuralModel);
+    const initialState = createInitialPersonaState(character, structurePrior, neuralModel);
+    const promptLatent = initialState.mu;
     const innateDevelopmentProfile = createInnateDevelopmentProfile(character);
-    const infantLatent = promptLatent;
+    const infantLatent = initialState.z0;
     const promptFragments = splitPromptFragments(promptText);
     const strongestFragments = promptFragments
       .map(fragment => ({
@@ -795,6 +832,10 @@
       input_prompt: character.prompt,
       prompt_fragments: strongestFragments.map(item => item.text),
       prompt_latent_persona: promptLatent,
+      initial_persona_state: initialState,
+      m1_mu: initialState.mu,
+      m1_sigma: initialState.sigma,
+      innate_noise: initialState.innate_noise,
       innate_seed: character.innate_seed || null,
       innate_development_influence: INNATE_DEVELOPMENT_INFLUENCE,
       innate_development_profile: innateDevelopmentProfile,
@@ -1293,6 +1334,14 @@
           based_on_model: structurePrior.model_id,
           input_prompt: character.prompt,
           prompt_fragments: splitPromptFragments(characterText(character)).slice(0, 3),
+          prompt_latent_persona: normalize(providedLatent.map(value => clamp(value))),
+          initial_persona_state: {
+            distribution_type: "external_latent_seed",
+            mu: normalize(providedLatent.map(value => clamp(value))),
+            sigma: Array(providedLatent.length).fill(0),
+            innate_noise: Array(providedLatent.length).fill(0),
+            z0: normalize(providedLatent.map(value => clamp(value)))
+          },
           infant_latent_persona: normalize(providedLatent.map(value => clamp(value))),
           latent_structure_edges: inferLatentEdges(normalize(providedLatent.map(value => clamp(value)))),
           neural_model_id: compatibleModel?.id || null,
@@ -1311,15 +1360,22 @@
     });
     const endingScores = {};
     let routeProbability = 1;
+    let currentLatent = [...adultLatent];
     const eventResults = EVENTS.map(event => {
       const routeSeed = `${character.id || characterText(character)}:${character.innate_seed || "no-seed"}:${event.id}`;
-      const interpretation = interpretPersonaForEvent(event, adultLatent, promptText, structurePrior, compatibleModel, routeSeed);
+      const interpretation = interpretPersonaForEvent(event, currentLatent, promptText, structurePrior, compatibleModel, routeSeed);
       const action = interpretation.action;
       const rationale = interpretation.rationale;
       routeProbability *= action.choice_probability || 1;
       Object.entries(action.endingWeight).forEach(([endingKey, weight]) => {
         endingScores[endingKey] = (endingScores[endingKey] || 0) + weight;
       });
+      const latentBefore = [...currentLatent];
+      const latentAfter = updatePersonaState(currentLatent, event.event_embedding, action.embedding, {
+        eventId: event.id,
+        actionId: action.id
+      });
+      currentLatent = latentAfter;
       return {
         event_id: event.id,
         chapter: event.chapter,
@@ -1333,6 +1389,9 @@
         action_label: action.label,
         action_embedding: action.embedding,
         action_summary: action.outcome,
+        latent_before: latentBefore,
+        latent_after: latentAfter,
+        m1_update_rule: "state_transition_from_event_action",
         decision_score: action.decision_score,
         action_probability: action.choice_probability,
         action_distribution: action.action_distribution,
@@ -1370,8 +1429,10 @@
       infant_latent_persona: infantLatent,
       developmental_logs: development.logs,
       persona_card: personaCard,
-      latent_persona: adultLatent,
-      latent_edges: latentEdges,
+      latent_persona: currentLatent,
+      latent_edges: inferLatentEdges(currentLatent),
+      post_development_latent_persona: adultLatent,
+      post_development_latent_edges: latentEdges,
       events: eventResults,
       ending,
       feedback_updates: []
@@ -1394,15 +1455,22 @@
 
   function simulateWorldEvents(character, latentVector, structurePrior, runLabel = "dynamic_rerun", neuralModel = null) {
     const promptText = characterText(character);
-    const normalizedLatent = normalize(latentVector.map(value => clamp(value)));
+    let currentLatent = normalize(latentVector.map(value => clamp(value)));
     const compatibleModel = isCompatibleModel(neuralModel, structurePrior) ? neuralModel : null;
     let routeProbability = 1;
     const events = EVENTS.map(event => {
       const routeSeed = `${character.id || promptText}:${runLabel}:${event.id}`;
-      const interpretation = interpretPersonaForEvent(event, normalizedLatent, promptText, structurePrior, compatibleModel, routeSeed);
+      const interpretation = interpretPersonaForEvent(event, currentLatent, promptText, structurePrior, compatibleModel, routeSeed);
       const action = interpretation.action;
       const rationale = interpretation.rationale;
       routeProbability *= action.choice_probability || 1;
+      const latentBefore = [...currentLatent];
+      const latentAfter = updatePersonaState(currentLatent, event.event_embedding, action.embedding, {
+        eventId: event.id,
+        actionId: action.id,
+        runLabel
+      });
+      currentLatent = latentAfter;
       return {
         event_id: event.id,
         chapter: event.chapter,
@@ -1416,6 +1484,9 @@
         action_label: action.label,
         action_embedding: action.embedding,
         action_summary: action.outcome,
+        latent_before: latentBefore,
+        latent_after: latentAfter,
+        m1_update_rule: "state_transition_from_event_action",
         decision_score: action.decision_score,
         action_probability: action.choice_probability,
         action_distribution: action.action_distribution,
@@ -1435,11 +1506,28 @@
     return {
       run_label: runLabel,
       neural_model_id: compatibleModel?.id || null,
-      latent_persona: normalizedLatent,
-      latent_edges: inferLatentEdges(normalizedLatent),
+      latent_persona: currentLatent,
+      latent_edges: inferLatentEdges(currentLatent),
       events,
       ending: scoreEnding(events)
     };
+  }
+
+  function updatePersonaState(latentVector, eventEmbedding, actionEmbedding, options = {}) {
+    const dims = latentVector.length;
+    const eventVector = fitEmbedding(eventEmbedding || [], dims, options.eventId || "event");
+    const actionVector = fitEmbedding(actionEmbedding || [], dims, options.actionId || "action");
+    const feedbackTargetValue = options.feedbackKind ? feedbackTarget(options.feedbackKind) : 1;
+    const eventPressure = options.eventPressure ?? 0.035;
+    const actionPressure = options.actionPressure ?? 0.115;
+    const inertia = options.inertia ?? 0.92;
+    const updated = latentVector.map((value, index) => {
+      const directionalShift =
+        eventPressure * eventVector[index] +
+        actionPressure * feedbackTargetValue * actionVector[index];
+      return clamp(value * inertia + directionalShift);
+    });
+    return normalize(updated);
   }
 
   function updateLatentWithFeedback(latentVector, actionEmbedding, feedbackKind, learningRate = 0.12) {
@@ -1556,6 +1644,11 @@
       || chooseAction(event, currentLatent, structurePrior); // fallback: 룰 기반
     const actionEmbedding = fitEmbedding(action.embedding, dims, action.id);
     const actionDistribution = buildVisibleActionSet(distribution, action, `${event.id}:${actionId || "engine"}`);
+    const latentBefore = [...currentLatent];
+    const latentAfter = updatePersonaState(currentLatent, event.event_embedding, actionEmbedding, {
+      eventId: event.id,
+      actionId: action.id
+    });
     return {
       endingWeight: action.endingWeight,
       eventTemplate: {
@@ -1570,6 +1663,9 @@
         action: action.id,
         action_label: action.label,
         action_embedding: actionEmbedding,
+        latent_before: latentBefore,
+        latent_after: latentAfter,
+        m1_update_rule: "state_transition_from_event_action",
         decision_score: action.decision_score,
         action_probability: action.choice_probability,
         action_distribution: actionDistribution,
@@ -1603,6 +1699,7 @@
     ENDINGS,
     encodeTextToLatent,
     encodePromptToLatent,
+    createInitialPersonaState,
     createInnateDevelopmentProfile,
     createTrainableModel,
     trainDeepLearningModel,
@@ -1613,6 +1710,7 @@
     blendDevelopmentSignals,
     findEvidenceByEmbedding,
     inferLatentEdges,
+    updatePersonaState,
     updateLatentWithFeedback,
     simulateWorldEvents,
     simulate,

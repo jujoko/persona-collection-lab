@@ -25,10 +25,16 @@ for (const character of characters) {
   assert.strictEqual(simulation.persona_structure_prior.latent_dimensions.length, simulation.persona_structure_prior.latent_dimension);
   assert.ok(simulation.prompt_interpretation.prompt_fragments.length > 0);
   assert.strictEqual(simulation.prompt_interpretation.prompt_latent_persona.length, simulation.persona_structure_prior.latent_dimension);
+  assert.strictEqual(simulation.prompt_interpretation.m1_mu.length, simulation.persona_structure_prior.latent_dimension);
+  assert.strictEqual(simulation.prompt_interpretation.m1_sigma.length, simulation.persona_structure_prior.latent_dimension);
+  assert.strictEqual(simulation.prompt_interpretation.innate_noise.length, simulation.persona_structure_prior.latent_dimension);
+  assert.strictEqual(simulation.prompt_interpretation.initial_persona_state.z0.length, simulation.persona_structure_prior.latent_dimension);
   assert.strictEqual(simulation.prompt_interpretation.innate_development_profile.length, engine.DEVELOPMENT_EVENTS.length);
   assert.strictEqual(simulation.prompt_interpretation.innate_development_influence, 0.22);
   assert.strictEqual(simulation.infant_latent_persona.length, simulation.persona_structure_prior.latent_dimension);
-  assert.deepStrictEqual(simulation.prompt_interpretation.prompt_latent_persona, simulation.infant_latent_persona);
+  assert.deepStrictEqual(simulation.prompt_interpretation.m1_mu, simulation.prompt_interpretation.prompt_latent_persona);
+  assert.deepStrictEqual(simulation.prompt_interpretation.initial_persona_state.z0, simulation.infant_latent_persona);
+  assert.notDeepStrictEqual(simulation.prompt_interpretation.prompt_latent_persona, simulation.infant_latent_persona);
   assert.strictEqual(simulation.developmental_logs.length, 4);
   assert.ok(simulation.persona_card);
   assert.ok(simulation.persona_card.title.includes("브리핑"));
@@ -65,9 +71,14 @@ for (const character of characters) {
     assert.ok(event.action_distribution.every(action => action.appearance_probability > 0 && action.appearance_probability <= 1));
     assert.ok(event.route_probability > 0 && event.route_probability <= 1);
     assert.ok(event.route_rarity);
+    assert.strictEqual(event.latent_before.length, simulation.persona_structure_prior.latent_dimension);
+    assert.strictEqual(event.latent_after.length, simulation.persona_structure_prior.latent_dimension);
+    assert.notDeepStrictEqual(event.latent_before, event.latent_after);
+    assert.strictEqual(event.m1_update_rule, "state_transition_from_event_action");
     assert.ok(event.prompt_evidence);
     assert.ok(event.rationale.includes(event.prompt_evidence));
   }
+  assert.deepStrictEqual(simulation.events.at(-1).latent_after, simulation.latent_persona);
   for (const value of simulation.latent_persona) {
     assert.ok(value >= -1 && value <= 1);
   }
