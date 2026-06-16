@@ -15,16 +15,20 @@ const ctx = canvas.getContext("2d");
 const STORAGE_KEY = "persona-collection-lab-v3";
 const state = loadState();
 const DEFAULT_PROMPT = "서울 외곽의 형편이 어려운 가정에서 자랐다. 아버지는 성적과 규율에 엄격했고 어머니는 형편이 더 어려운 이웃을 자주 도왔다. 어린 시절에는 가족에게 짐이 될까 불안해했으며, 지금은 안정적인 직장을 원하지만 부당한 일을 보면 외면하지 못한다.";
+const DEFAULT_NAME_CANDIDATES = ["민준", "서연", "도윤", "하은", "지호", "수아", "현우", "유진"];
 
 const samples = [
   {
-    prompt: DEFAULT_PROMPT
+    prompt: DEFAULT_PROMPT,
+    names: ["민준", "하은", "현우", "수아"]
   },
   {
-    prompt: "경제적으로 여유 있는 전문직 가정에서 자랐다. 부모는 사랑을 표현했지만 성취와 체면을 더 중요하게 여겼다. 어릴 때부터 코딩과 토론 교육을 받았고 실패하면 인정받지 못할까 두려워한다. 지금은 기술 창업으로 사회 문제를 해결하고 싶지만 성공에 대한 집착도 강하다."
+    prompt: "경제적으로 여유 있는 전문직 가정에서 자랐다. 부모는 사랑을 표현했지만 성취와 체면을 더 중요하게 여겼다. 어릴 때부터 코딩과 토론 교육을 받았고 실패하면 인정받지 못할까 두려워한다. 지금은 기술 창업으로 사회 문제를 해결하고 싶지만 성공에 대한 집착도 강하다.",
+    names: ["서연", "도윤", "유진", "지우"]
   },
   {
-    prompt: "지방 산업도시의 노동자 가정에서 자랐다. 공장 폐업으로 부모가 오랫동안 생계 불안을 겪었고, 어린 시절 부당하게 해고된 이웃들이 외면받는 모습을 보았다. 권위와 대기업을 쉽게 믿지 않으며, 지금은 노동 상담과 지역 활동을 통해 약자를 보호하려 한다."
+    prompt: "지방 산업도시의 노동자 가정에서 자랐다. 공장 폐업으로 부모가 오랫동안 생계 불안을 겪었고, 어린 시절 부당하게 해고된 이웃들이 외면받는 모습을 보았다. 권위와 대기업을 쉽게 믿지 않으며, 지금은 노동 상담과 지역 활동을 통해 약자를 보호하려 한다.",
+    names: ["지호", "수아", "태준", "나윤"]
   }
 ];
 
@@ -107,10 +111,20 @@ function makeCharacterId(character) {
   return `C${String(PersonaEngine.hashText(base)).slice(0, 6)}`;
 }
 
-function makeGeneratedName(prompt, id) {
+function parseNameCandidates(raw) {
+  return String(raw || "")
+    .split(/[,\n]/)
+    .map(name => name.trim())
+    .filter(name => /^[가-힣A-Za-z0-9_-]{2,12}$/.test(name))
+    .slice(0, 24);
+}
+
+function makeGeneratedName(prompt, id, candidates = DEFAULT_NAME_CANDIDATES) {
   const explicitName = prompt.match(/(?:이름은|이름:)\s*([가-힣A-Za-z0-9_-]{2,12})/)?.[1];
   if (explicitName) return explicitName;
-  return `인물 ${id.slice(1)}`;
+  const pool = candidates.length > 0 ? candidates : DEFAULT_NAME_CANDIDATES;
+  const index = PersonaEngine.hashText(`${prompt}|${id}|name`) % pool.length;
+  return pool[index];
 }
 
 function embeddingEndpoints() {
@@ -147,12 +161,14 @@ async function fetchPromptEmbedding(prompt) {
 }
 
 function getFormCharacter() {
+  const nameCandidates = parseNameCandidates(document.querySelector("#nameListInput")?.value);
   const character = {
-    prompt: document.querySelector("#promptInput").value.trim()
+    prompt: document.querySelector("#promptInput").value.trim(),
+    name_candidates: nameCandidates
   };
   character.id = makeCharacterId(character);
   character.innate_seed = `INNATE_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
-  character.generated_name = makeGeneratedName(character.prompt, character.id);
+  character.generated_name = makeGeneratedName(character.prompt, character.id, nameCandidates);
   character.name = character.generated_name;
   character.birth_state = "infant";
   character.free_text_length = character.prompt.length;
@@ -857,6 +873,10 @@ function renderDataset() {
 function fillSample() {
   const sample = samples[state.characters.length % samples.length];
   document.querySelector("#promptInput").value = sample.prompt;
+  const nameInput = document.querySelector("#nameListInput");
+  if (nameInput && sample.names) {
+    nameInput.value = sample.names.join(", ");
+  }
 }
 
 function ensureDefaultPrompt() {
