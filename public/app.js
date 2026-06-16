@@ -124,8 +124,7 @@ function isValidCharacterName(name) {
 }
 
 function makeGeneratedName(prompt, id, requestedName = "") {
-  const explicitName = prompt.match(/(?:이름은|이름:)\s*([가-힣A-Za-z0-9_-]{2,12})/)?.[1];
-  const directName = normalizeNameInput(requestedName || explicitName);
+  const directName = normalizeNameInput(requestedName);
   if (directName && isValidCharacterName(directName)) return directName;
   const index = PersonaEngine.hashText(`${prompt}|${id}|name`) % DEFAULT_NAME_POOL.length;
   return DEFAULT_NAME_POOL[index];
