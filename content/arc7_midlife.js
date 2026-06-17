@@ -346,9 +346,9 @@ const ARC7_MIDLIFE = {
       ]
     },
 
-    // ── ME010: 마지막 제안 ────────────────────────────────────────────────────
+    // ── E709: 마지막 제안 ────────────────────────────────────────────────────
     {
-      id: "ME010",
+      id: "E709",
       arc: "arc7",
       title: "마지막 제안",
       type: "final_compromise",
@@ -493,9 +493,9 @@ const ARC7_MIDLIFE = {
       ]
     },
 
-    // ── ME025: 전 팀의 연락 [requires: transferred_away] ──────────────────────
+    // ── E710: 전 팀의 연락 [requires: transferred_away] ──────────────────────
     {
-      id: "ME025",
+      id: "E710",
       arc: "arc7",
       title: "전 팀의 연락",
       type: "return_request_from_old_team",

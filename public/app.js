@@ -479,14 +479,12 @@ async function runSimulationWithM2(character, neuralModel) {
   const storyRun = useStoryArcs
     ? StoryAdapter.createRun(availableArcs, { innateSeed: character.innate_seed })
     : null;
-  const worldEvents = useStoryArcs ? null : PersonaEngine.EVENTS;
+  const worldEvents = null;
 
   const eventResults = [];
   let routeProbability = 1;
   while (true) {
-    const event = useStoryArcs
-      ? storyRun.nextEvent()
-      : worldEvents[eventResults.length];
+    const event = storyRun ? storyRun.nextEvent() : null;
     if (!event) break;
 
     const step = PersonaEngine.buildWorldStep(event, latent);
@@ -766,7 +764,7 @@ function sourceEventFor(simulation, eventId) {
   const arcEvent = (typeof STORY_ARCS !== "undefined")
     ? STORY_ARCS.flatMap(arc => arc.events || []).find(e => e.id === eventId)
     : null;
-  return arcEvent || PersonaEngine.EVENTS.find(event => event.id === eventId);
+  return arcEvent || null;
 }
 
 function predictionFor(simulation, eventId) {
