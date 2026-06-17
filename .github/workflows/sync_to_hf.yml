@@ -39,7 +39,20 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
+          SPACE_DIR="$RUNNER_TEMP/persona-collection-lab-space"
+          mkdir -p "$SPACE_DIR"
+          rsync -a --delete \
+            --exclude=".git/" \
+            --exclude=".venv/" \
+            --exclude="node_modules/" \
+            --exclude="outputs/" \
+            ./ "$SPACE_DIR/"
+
+          cd "$SPACE_DIR"
+          git init -b main
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
+          git add .
+          git commit -m "Sync Space from ${GITHUB_SHA}"
           git remote add hf https://jujoko:$HF_TOKEN@huggingface.co/spaces/jujoko/persona-collection-lab
           git push hf main --force
