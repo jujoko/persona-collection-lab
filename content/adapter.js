@@ -13,7 +13,10 @@
  * 이 어댑터는 flags만 다루고, latent 벡터에는 관여하지 않는다.
  */
 
-const { matchesFlags, FLAG_DEFAULTS } =
+const {
+  matchesFlags: adapterMatchesFlags,
+  FLAG_DEFAULTS: ADAPTER_FLAG_DEFAULTS
+} =
   (typeof require === "function")
     ? require("./flags.js")
     : globalThis.StoryFlags;
@@ -74,7 +77,7 @@ function weightedSample(items, count, seed) {
  */
 function adaptAction(action, flags) {
   // action-level requires/excludes 체크 (플래그 조건)
-  if (!matchesFlags(flags, action.requires || {}, action.excludes || {})) {
+  if (!adapterMatchesFlags(flags, action.requires || {}, action.excludes || {})) {
     return null; // 이 선택지는 현재 플래그에서 노출되지 않음
   }
   return {
@@ -162,14 +165,14 @@ function resolveSummary(summary, variants, flags) {
  * @returns {object[]} 엔진 호환 이벤트 배열
  */
 function buildRunEvents(arcs, { flags = {}, innateSeed = "default" } = {}) {
-  const mergedFlags = { ...FLAG_DEFAULTS, ...flags };
+  const mergedFlags = { ...ADAPTER_FLAG_DEFAULTS, ...flags };
   const runEvents = [];
 
   const sortedArcs = [...arcs].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   for (const arc of sortedArcs) {
     const eligible = (arc.events || []).filter(event =>
-      matchesFlags(mergedFlags, event.requires || {}, event.excludes || {})
+      adapterMatchesFlags(mergedFlags, event.requires || {}, event.excludes || {})
     );
 
     const arcSeed = hashText(`${innateSeed}:${arc.id}`);
@@ -195,7 +198,7 @@ function sortedArcs(arcs) {
 function eligibleAdaptedEvents(arc, flags, usedEventIds) {
   return (arc.events || [])
     .filter(event => !usedEventIds.has(event.id))
-    .filter(event => matchesFlags(flags, event.requires || {}, event.excludes || {}))
+    .filter(event => adapterMatchesFlags(flags, event.requires || {}, event.excludes || {}))
     .map(event => adaptEvent(event, arc, flags))
     .filter(Boolean);
 }
@@ -206,7 +209,7 @@ function eligibleAdaptedEvents(arc, flags, usedEventIds) {
 function createRun(arcs, { flags = {}, innateSeed = "default" } = {}) {
   const state = {
     arcs: sortedArcs(arcs),
-    flags: { ...FLAG_DEFAULTS, ...flags },
+    flags: { ...ADAPTER_FLAG_DEFAULTS, ...flags },
     innateSeed,
     arcIndex: 0,
     arcEventCounts: {},
@@ -296,7 +299,7 @@ function applyActionFlags(currentFlags, action) {
  * 플래그 기본값 반환.
  */
 function defaultFlags() {
-  return { ...FLAG_DEFAULTS };
+  return { ...ADAPTER_FLAG_DEFAULTS };
 }
 
 const _StoryAdapter = {

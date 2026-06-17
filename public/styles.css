@@ -139,27 +139,27 @@ h2 {
 }
 
 .hero-band {
-  min-height: 260px;
+  min-height: 0;
   display: grid;
   grid-template-columns: 1fr;
   gap: 24px;
   align-items: stretch;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
-  padding: 22px 0;
+  padding: 18px 0;
 }
 
 .world-copy {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 16px;
+  gap: 12px;
   max-width: 860px;
-  padding: 18px 0;
+  padding: 8px 0;
 }
 
 .world-copy h2 {
-  font-size: clamp(2rem, 5vw, 3.8rem);
+  font-size: clamp(1.8rem, 4vw, 3.1rem);
   line-height: 1;
 }
 
@@ -196,7 +196,8 @@ h2 {
 }
 
 .user-grid {
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+  align-items: start;
 }
 
 .admin-grid {
@@ -219,6 +220,8 @@ h2 {
 .creation-panel {
   display: grid;
   gap: 14px;
+  position: sticky;
+  top: 18px;
 }
 
 label {
@@ -375,18 +378,24 @@ textarea:focus {
 
 .result-list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(260px, 1fr));
-  gap: 12px;
+  grid-template-columns: 1fr;
+  gap: 14px;
 }
 
 .result-section-title {
   grid-column: 1 / -1;
-  padding: 8px 2px 2px;
+  padding: 10px 2px 0;
+}
+
+.primary-section-title {
+  padding-top: 0;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 10px;
 }
 
 .result-section-title h3 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.18rem;
   letter-spacing: 0;
 }
 
@@ -541,13 +550,14 @@ textarea:focus {
 .score-summary-card {
   grid-column: 1 / -1;
   display: grid;
-  gap: 14px;
-  padding: 18px;
+  gap: 16px;
+  padding: 22px;
   border: 1px solid #c7b69d;
-  border-radius: 10px;
+  border-radius: 14px;
   background:
     linear-gradient(135deg, rgba(187, 139, 47, 0.16), transparent 42%),
     #fffaf1;
+  box-shadow: 0 16px 40px rgba(31, 29, 27, 0.12);
 }
 
 .prediction-card.completed {
@@ -598,7 +608,8 @@ textarea:focus {
 .event-summary,
 .prediction-hint {
   color: #514a44;
-  line-height: 1.65;
+  line-height: 1.72;
+  font-size: 1rem;
 }
 
 .choice-grid {
@@ -610,7 +621,7 @@ textarea:focus {
 .choice-button {
   display: grid;
   gap: 8px;
-  min-height: 136px;
+  min-height: 150px;
   padding: 14px;
   text-align: left;
   align-content: start;
@@ -691,7 +702,63 @@ textarea:focus {
 }
 
 .revealed-event-card {
+  grid-column: 1 / -1;
   background: #fbf7ef;
+  opacity: 0.92;
+}
+
+.analysis-drawer {
+  grid-column: 1 / -1;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 253, 248, 0.78);
+  overflow: hidden;
+}
+
+.analysis-drawer summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 15px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.analysis-drawer summary::-webkit-details-marker {
+  display: none;
+}
+
+.analysis-drawer summary::after {
+  content: "펼치기";
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 10px;
+  color: var(--green);
+  background: #fffaf1;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.analysis-drawer[open] summary::after {
+  content: "접기";
+}
+
+.analysis-drawer summary span {
+  display: grid;
+  gap: 3px;
+}
+
+.analysis-drawer summary small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.drawer-content {
+  display: grid;
+  gap: 12px;
+  padding: 0 16px 16px;
 }
 
 .score-row {
@@ -893,6 +960,10 @@ pre {
   .user-grid,
   .admin-grid {
     grid-template-columns: 1fr;
+  }
+
+  .creation-panel {
+    position: static;
   }
 
   .result-list {
