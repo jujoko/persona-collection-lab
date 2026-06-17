@@ -21,7 +21,7 @@ const ARC6_THIRTIES = {
   subtitle: "선택의 결과가 실체로 드러나는 시기",
   age_range: "30–38세",
   chapter_card: "서른이 됐다. 어른이 된 것 같지는 않은데 어른 대접을 받는다. 결혼, 집, 아이, 승진. 주변이 묻는 것들이 달라졌다.",
-  events_per_run: 3,
+  events_per_run: 4,
 
   events: [
 
@@ -1021,6 +1021,93 @@ K의 두 번째 스타트업은 올해 투자를 받으며 크게 성장했다.
           bias: -0.01,
           outcome: "노무사에게 짧게 문의했다. 보복 금지 조항이 있지만, 현실적으로 보장되지는 않는다고 했다.",
           endingWeight: { reformer: 1, survivor: 1, whistleblower: 1 },
+          sets: {}
+        }
+      ]
+    },
+
+    // ── E609: 후배의 연락 [requires: mentored_someone] ───────────────────────
+    {
+      id: "E609",
+      arc: "arc6",
+      title: "후배의 연락",
+      type: "mentor_responsibility",
+      tags: ["후배", "멘토", "책임"],
+      requires: { mentored_someone: true },
+      excludes: {},
+      weight: 1.3,
+
+      summary: `몇 년 전 점심 자리에서 이야기를 나눴던 후배에게서 연락이 왔다.
+'선배, 저 그때 선배 말 듣고 계속 버텼는데요. 이제 진짜 한계인 것 같아요.'
+그때 내가 뭐라고 했는지 정확히 기억나지 않는다.
+하지만 그 후배는 기억하고 있다.`,
+
+      actions: [
+        {
+          id: "listens_and_releases",
+          label: "지금이라도 그만두는 게 맞을 수 있다고 말한다",
+          outcome: `후배가 한동안 말이 없었다. '그 말이 필요했어요'라고 했다.
+내가 예전에 어떤 말을 했는지가 다시 마음에 걸렸다.`,
+          sets: { mentee_outcome: "supported" }
+        },
+        {
+          id: "encourages_to_hold_on",
+          label: "조금만 더 버텨보라고 말한다",
+          outcome: `후배가 '네'라고 했다. 그 목소리가 편하지 않았다.
+힘내라는 말이 맞는지 아닌지 확신이 없다.`,
+          sets: { mentee_outcome: "pushed" }
+        },
+        {
+          id: "asks_what_they_want",
+          label: "지금 어떻게 하고 싶냐고 먼저 묻는다",
+          outcome: `후배가 '그게 뭔지 모르겠어서 선배한테 물어본 거예요'라고 했다.
+대답을 주려다 대화가 됐다.`,
+          sets: { mentee_outcome: "talking" }
+        }
+      ]
+    },
+
+    // ── E610: 과거의 말 (발언 맥락 충돌) — 공통 ─────────────────────────────
+    {
+      id: "E610",
+      arc: "arc6",
+      title: "과거의 말",
+      type: "past_vs_present_self",
+      tags: ["발언", "과거", "정체성"],
+      requires: {},
+      excludes: {},
+      weight: 1.0,
+
+      summary: `6년 전 직장 커뮤니티에 올린 글 하나가 오늘 갑자기 캡처로 퍼지고 있다.
+그때 그 말은 틀린 말이 아니었다. 하지만 지금의 나라면 그렇게 쓰지 않았을 것이다.
+주변에서 연락이 오기 시작했다. 설명을 요구하는 사람도 있고, 그냥 링크만 보내온 사람도 있다.
+나는 어떻게 대응할 것인가.`,
+
+      summary_variants: {
+        "reputation:high": `이름이 알려진 상황이라 파급이 빠르다. 당신의 이름이 여기저기서 거론된다.`,
+        "workplace_stance:reformer": `그때는 개혁하려는 쪽이었는데, 지금 그 글이 반대로 읽히고 있다.`
+      },
+
+      actions: [
+        {
+          id: "posts_explanation",
+          label: "직접 경위와 현재 생각을 공개적으로 밝힌다",
+          outcome: `올렸다. 댓글이 달리기 시작했다.
+진심을 인정하는 사람도, 아닌 사람도 있다. 이 설명이 상황을 나아지게 했는지는 며칠이 지나야 알 것 같다.`,
+          sets: { reputation: "medium" }
+        },
+        {
+          id: "says_nothing_publicly",
+          label: "공개 반응을 하지 않는다. 조용히 지나가길 기다린다",
+          outcome: `3일이 지나자 다른 이슈가 올라왔다. 조용해졌다.
+하지만 아는 사람들은 봤다. 그 사람들이 어떻게 생각하는지는 모른다.`,
+          sets: {}
+        },
+        {
+          id: "contacts_key_people",
+          label: "공개 반응 대신 중요한 사람들에게 직접 연락한다",
+          outcome: `몇 명에게 메시지를 보냈다. 이해해준 사람도 있고, 읽고 답이 없는 사람도 있다.
+이게 더 나은 방식이었는지, 도망인지 모르겠다.`,
           sets: {}
         }
       ]

@@ -1396,6 +1396,179 @@ renderPrimaryResultLayout = function birthBackgroundFirstResultLayout(simulation
   `;
 };
 
+actionReading = function playerFacingActionReading() {
+  return {
+    tags: [],
+    fitLabel: "",
+    probability: null,
+    hint: ""
+  };
+};
+
+renderPredictionPanel = function renderPredictionPanelPlayerFacing(simulation) {
+  const total = simulation.events.length;
+  const gameplay = simulation.gameplay;
+  const current = simulation.events[gameplay.currentIndex];
+  if (!current) {
+    return `
+      <article class="prediction-card completed">
+        <div>
+          <p class="eyebrow">Campaign Complete</p>
+          <h3>모든 사건을 통과했습니다</h3>
+        </div>
+        <p>${simulation.character.generated_name}의 선택을 ${gameplay.predictions.filter(item => item.correct).length}/${total}개 맞혔습니다.</p>
+      </article>
+    `;
+  }
+
+  const sourceEvent = sourceEventFor(simulation, current.event_id);
+  const prediction = predictionFor(simulation, current.event_id);
+  const progress = Math.round((gameplay.currentIndex / Math.max(1, total)) * 100);
+  const visibleActionIds = Array.isArray(current.visible_action_ids) && current.visible_action_ids.length > 0
+    ? current.visible_action_ids
+    : (sourceEvent?.actions || []).map(action => action.id);
+  const choices = (sourceEvent?.actions || [])
+    .filter(action => visibleActionIds.includes(action.id))
+    .map(action => {
+      const selected = prediction?.guessed_action === action.id;
+      const actual = current.action === action.id;
+      const revealedClass = prediction
+        ? actual ? "actual" : selected ? "missed" : ""
+        : "";
+      return `
+        <button
+          type="button"
+          class="choice-button ${selected ? "selected" : ""} ${revealedClass}"
+          data-predict-character-id="${simulation.character_id}"
+          data-event-id="${current.event_id}"
+          data-action-id="${action.id}"
+          ${prediction ? "disabled" : ""}
+        >
+          <b>${action.label}</b>
+          <span>${action.outcome}</span>
+        </button>
+      `;
+    }).join("");
+
+  return `
+    <article class="prediction-card" data-current-event="${current.event_id}">
+      <div class="prediction-scoreboard">
+        <div>
+          <p class="eyebrow">현재 사건</p>
+          <h3>${current.event_title}</h3>
+        </div>
+        <div class="score-pills">
+          <span>점수 ${gameplay.score}</span>
+          <span>연속 ${gameplay.streak}</span>
+          <span>${gameplay.currentIndex + 1}/${total}</span>
+        </div>
+      </div>
+      <div class="progress-track" aria-label="사건 진행률">
+        <div style="width:${progress}%"></div>
+      </div>
+      <p class="event-summary">${current.event_summary}</p>
+      <div class="choice-grid">
+        ${choices}
+      </div>
+      ${prediction ? `
+        <div class="prediction-reveal ${prediction.correct ? "correct" : "wrong"}">
+          <strong>${prediction.correct ? "예측 성공" : "예측 실패"}</strong>
+          <p>실제 선택: <b>${current.action_label}</b></p>
+          <p>${current.outcome}</p>
+          <blockquote>${current.rationale}</blockquote>
+          <button type="button" class="primary-action" data-next-event-for="${simulation.character_id}">
+            ${gameplay.currentIndex + 1 >= total ? "최종 엔딩 보기" : "다음 사건으로"}
+          </button>
+        </div>
+      ` : `
+        <p class="prediction-hint">선택지는 정답이 아니라 예측입니다. 내가 고르고 싶은 것보다 이 캐릭터라면 고를 것을 눌러보세요.</p>
+      `}
+    </article>
+  `;
+};
+
+renderRevealedEvents = function renderEventHistoryDrawerPlayerFacing(simulation) {
+  const revealed = simulation.events.slice(0, simulation.gameplay.currentIndex);
+  if (revealed.length === 0) return "";
+  const historyCards = revealed.map(event => {
+    const prediction = predictionFor(simulation, event.event_id);
+    return `
+      <article class="result-card revealed-event-card" data-event-id="${event.event_id}">
+        <div class="card-title-row">
+          <div class="result-meta">
+            <span>${prediction?.correct ? "예측 성공" : "예측 실패"}</span>
+          </div>
+          <strong>${event.event_title}</strong>
+        </div>
+        <div class="event-flow compact-event-flow">
+          <section>
+            <span class="flow-label">사건</span>
+            <p>${event.event_summary}</p>
+          </section>
+          <section>
+            <span class="flow-label">캐릭터의 실제 선택</span>
+            <p><b>${event.action_label}</b></p>
+            <p>${event.outcome}</p>
+          </section>
+        </div>
+        <div class="feedback-row">
+          <button type="button" data-feedback="consistent" data-character-id="${simulation.character_id}" data-event-id="${event.event_id}">완전 캐릭터답다</button>
+          <button type="button" data-feedback="ambiguous" data-character-id="${simulation.character_id}" data-event-id="${event.event_id}">조금 애매함</button>
+          <button type="button" data-feedback="wrong" data-character-id="${simulation.character_id}" data-event-id="${event.event_id}">전혀 아님</button>
+        </div>
+      </article>
+    `;
+  }).reverse().join("");
+
+  return `
+    <details class="event-history-drawer">
+      <summary>
+        <span>
+          <b>선택했던 사건 히스토리</b>
+          <small>이미 지나간 사건과 캐릭터의 실제 선택을 다시 봅니다.</small>
+        </span>
+        <span class="history-count">${revealed.length}개</span>
+      </summary>
+      <div class="drawer-content event-history-list">
+        ${historyCards}
+      </div>
+    </details>
+  `;
+};
+
+renderGameSummary = function renderGameSummaryPlayerFacing(simulation) {
+  if (!simulation.gameplay.completed) return "";
+  const total = simulation.events.length;
+  const correct = simulation.gameplay.predictions.filter(item => item.correct).length;
+  const accuracy = Math.round((correct / Math.max(1, total)) * 100);
+  const rows = simulation.gameplay.predictions.map((item, index) => {
+    const event = simulation.events.find(candidate => candidate.event_id === item.event_id);
+    const guessed = sourceEventFor(simulation, item.event_id)?.actions.find(action => action.id === item.guessed_action);
+    return `
+      <div class="score-row ${item.correct ? "correct" : "wrong"}">
+        <span>${index + 1}</span>
+        <p>${event?.event_title || "사건"}: ${guessed?.label || "-"} → ${event?.action_label || "-"}</p>
+        <b>${item.points}점</b>
+      </div>
+    `;
+  }).join("");
+  return `
+    <article class="result-card score-summary-card">
+      <div class="prediction-scoreboard">
+        <div>
+          <p class="eyebrow">Insight Score</p>
+          <strong>캐릭터 이해도 ${accuracy}%</strong>
+        </div>
+        <div class="score-pills">
+          <span>${correct}/${total} 적중</span>
+          <span>${simulation.gameplay.score}점</span>
+        </div>
+      </div>
+      ${rows}
+    </article>
+  `;
+};
+
 function collectMemories(simulation) {
   return simulation.events.flatMap(event => {
     const memory = event.action_memory;

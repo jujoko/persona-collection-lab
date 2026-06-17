@@ -20,7 +20,7 @@ const ARC7_MIDLIFE = {
   subtitle: "어떤 삶이었는가",
   age_range: "38–50세",
   chapter_card: "마흔이 됐다. 예상했던 것들이 있고, 예상 못 했던 것들이 있다. 이제 앞보다 뒤를 돌아보는 일이 늘었다.",
-  events_per_run: 3,
+  events_per_run: 4,
 
   events: [
 
@@ -389,6 +389,105 @@ const ARC7_MIDLIFE = {
           outcome: "큰 파장을 만들며 판을 흔들지만, 돌아갈 길도 사라진다.",
           endingWeight: { changemaker: 3, whistleblower: 2, exile: 1 },
           memory: "제안서를 공개한 날, 핸드폰이 멈출 때까지 울렸다. 그 뒤로 조용한 날이 없었다.",
+          sets: {}
+        }
+      ]
+    },
+
+    // ── E707: 후배의 소식 [requires: mentored_someone] ───────────────────────
+    {
+      id: "E707",
+      arc: "arc7",
+      title: "후배의 소식",
+      type: "mentor_legacy",
+      tags: ["후배", "흔적", "의미"],
+      requires: { mentored_someone: true },
+      excludes: {},
+      weight: 1.2,
+
+      summary: `그 후배가 자기 일을 시작했다고 연락이 왔다.
+작은 규모지만, 자기가 원하던 방향으로 가고 있다고 했다.
+'선배 덕분이에요'라는 말도 덧붙였다.
+그 말이 맞는 말인지 모르겠다. 그때 내가 뭘 해준 게 있는지 떠올려봤다.`,
+
+      summary_variants: {
+        "mentee_outcome:pushed": `'버텨보라고 하셔서 버텼어요. 지금 생각하면 그게 맞았던 것 같아요.'
+내가 그렇게 말했다는 게 잘한 건지, 운이 좋았던 건지 모르겠다.`,
+        "mentee_outcome:supported": `'그만둬도 된다고 해주셔서 그만둘 수 있었어요.'
+그 말 한마디가 그 사람의 방향을 바꿨다는 게 낯설게 느껴진다.`,
+        "mentee_outcome:talking": `그때 이후로 가끔 연락이 닿았다. 그게 쌓였던 것 같다.`
+      },
+
+      actions: [
+        {
+          id: "feels_glad",
+          label: "잘 됐다고, 진심으로 기뻐한다",
+          outcome: `기뻤다. 이 기분이 낯설었다. 내 일이 아닌데 내 일 같았다.
+어떤 흔적을 남기는 방식이 있다는 걸 처음으로 실감했다.`,
+          sets: {}
+        },
+        {
+          id: "deflects_credit",
+          label: "본인이 잘 한 거라고, 내 덕분이 아니라고 한다",
+          outcome: `후배가 '그래도 선배 덕분이에요'라고 했다. 그 말을 받아들이는 게 어려웠다.
+왜 어려운지는 잘 모르겠다.`,
+          sets: {}
+        },
+        {
+          id: "meets_and_listens",
+          label: "만나서 직접 이야기를 들어보자고 한다",
+          outcome: `밥을 같이 먹었다. 그때 그 점심 자리보다 후배가 훨씬 말이 많아졌다.
+그 변화가 느껴졌다.`,
+          sets: {}
+        }
+      ]
+    },
+
+    // ── E708: 빈 방 (고독 정산) — 공통 ──────────────────────────────────────
+    {
+      id: "E708",
+      arc: "arc7",
+      title: "빈 방",
+      type: "solitude_reckoning",
+      tags: ["혼자", "공간", "정리"],
+      requires: {},
+      excludes: {},
+      weight: 1.1,
+
+      summary: `오늘 집이 조용하다. 예전보다 훨씬 조용하다.
+자녀가 독립했거나, 오래된 관계가 끝났거나, 혼자 살아온 것이 새삼 다르게 느껴지거나.
+이유는 달라도 이 공간이 처음으로 온전히 내 것이 된 것 같다.
+그게 자유인지 비어있음인지 아직 모르겠다.`,
+
+      summary_variants: {
+        "family_structure:married": `배우자가 오래 아파 요양원에 들어갔다. 집에 혼자 남았다.
+이런 상황이 올 거라고는 생각했는데, 이렇게 조용할 줄은 몰랐다.`,
+        "family_structure:single": `혼자가 익숙하다고 생각했다. 그런데 이 조용함이 오늘따라 다르게 온다.
+어딘가가 달라진 건지, 내가 달라진 건지 모르겠다.`,
+        "family_structure:cohabiting": `파트너가 요즘 자주 집을 비운다. 이 조용함이 나쁘지 않다.
+그게 다행인지 걱정인지 구분이 안 된다.`
+      },
+
+      actions: [
+        {
+          id: "sits_with_it",
+          label: "이 조용함을 그냥 둔다",
+          outcome: `저녁 내내 아무것도 안 했다. 티비도 켜지 않았다.
+한 시간쯤 지나자 이 공간이 낯설지 않아졌다.`,
+          sets: {}
+        },
+        {
+          id: "fills_the_space",
+          label: "뭔가로 채운다. 음악이든, 약속이든",
+          outcome: `조용한 것이 불편했다. 뭔가를 틀었다.
+편해졌다. 그 편함이 회피인지 적응인지는 모르겠지만.`,
+          sets: {}
+        },
+        {
+          id: "reorders_the_room",
+          label: "방을 새로 정리한다. 내 방식대로",
+          outcome: `가구 위치를 바꿨다. 예전부터 불편했던 것들을 치웠다.
+바뀐 방이 낯설다. 동시에 내 것 같다.`,
           sets: {}
         }
       ]

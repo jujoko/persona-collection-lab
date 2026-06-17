@@ -121,6 +121,16 @@ const FLAG_DEFINITIONS = {
     values: [false, true],
     set_in: "arc5",
     description: "직장에서 부정 정황을 확인했는지 여부"
+  },
+  mentored_someone: {
+    values: [false, true],
+    set_in: "arc5",
+    description: "Early-career choices created a junior colleague who remembers the character's advice."
+  },
+  mentee_outcome: {
+    values: [null, "supported", "pushed", "talking"],
+    set_in: "arc6",
+    description: "How the mentored junior remembers and responds to the character's advice."
   }
 };
 
@@ -151,7 +161,9 @@ const FLAG_DEFAULTS = {
   filed_anonymous_report: false,
   saved_evidence: false,
   transferred_away: false,
-  fraud_discovered: false
+  fraud_discovered: false,
+  mentored_someone: false,
+  mentee_outcome: null
 };
 
 /**
