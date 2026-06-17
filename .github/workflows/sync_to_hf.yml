@@ -55,4 +55,12 @@ jobs:
           git add .
           git commit -m "Sync Space from ${GITHUB_SHA}"
           git remote add hf https://jujoko:$HF_TOKEN@huggingface.co/spaces/jujoko/persona-collection-lab
+          for attempt in 1 2 3 4 5; do
+            if git push hf main --force; then
+              exit 0
+            fi
+            sleep_seconds=$((attempt * 30))
+            echo "HF push failed on attempt ${attempt}; retrying in ${sleep_seconds}s."
+            sleep "$sleep_seconds"
+          done
           git push hf main --force
