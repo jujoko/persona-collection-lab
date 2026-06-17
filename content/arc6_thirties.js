@@ -399,6 +399,678 @@ const ARC6_THIRTIES = {
           sets: { health: "warning" }
         }
       ]
+    },
+
+    // ── ME002: 가족의 빚 ──────────────────────────────────────────────────────
+    {
+      id: "ME002",
+      arc: "arc6",
+      title: "가족의 빚",
+      type: "family_loyalty_dilemma",
+      tags: ["가족", "법", "선택"],
+      requires: {},
+      excludes: {},
+      weight: 1.0,
+      summary: `부모님이 사기를 당해 집을 잃을 위기다. 지인이 불법 대출 브로커를 소개해준다.
+합법 경로로는 시간이 없고, 불법 경로는 빠르지만 전과 위험이 있다.`,
+      event_embedding: [0.22, 0.48, -0.36, 0.56, 0.28, -0.14, 0.18, -0.22],
+      actions: [
+        {
+          id: "refuses_illegal",
+          label: "불법 경로를 거절하고 합법 방법을 찾는다",
+          embedding: [0.14, -0.28, 0.18, 0.24, -0.16, 0.42, 0.68, 0.74],
+          bias: 0,
+          outcome: "시간이 걸리지만 법 안에서 해결책을 찾는다.",
+          endingWeight: { reformer: 1, caregiver: 1, survivor: 1 },
+          sets: {}
+        },
+        {
+          id: "uses_illegal_loan",
+          label: "가족을 위해 불법 대출을 선택한다",
+          embedding: [0.52, 0.62, -0.44, 0.66, 0.32, -0.22, -0.58, -0.48],
+          bias: 0.04,
+          outcome: "가족을 구하지만, 이후 법적 위험이 따라다닌다.",
+          endingWeight: { caregiver: 2, opportunist: 1, forgotten: 1 },
+          memory: "어머니 집을 지키려고 사인한 종이 한 장이 몇 년을 따라다녔다.",
+          sets: {}
+        },
+        {
+          id: "seeks_third_way",
+          label: "사회단체·법률구조 등 대안을 찾는다",
+          embedding: [0.38, -0.12, 0.28, 0.48, 0.24, 0.52, 0.32, 0.56],
+          bias: -0.02,
+          outcome: "시간과 노력이 들지만 합법적이고 지속가능한 해결책을 마련한다.",
+          endingWeight: { reformer: 2, caregiver: 2 },
+          sets: {}
+        }
+      ]
+    },
+
+    // ── ME003: 자원 배분 (재난 현장 의료 딜레마) ──────────────────────────────
+    {
+      id: "ME003",
+      arc: "arc6",
+      title: "자원 배분",
+      type: "scarcity_allocation",
+      tags: ["생명", "공정", "책임"],
+      requires: {},
+      excludes: {},
+      weight: 0.8,
+      summary: `소규모 의료 봉사팀으로 재난 현장에 도착했다. 의약품이 부족하다.
+중증 노인 환자에게 쓰면 한 명을 살릴 수 있고, 경증 어린이 10명에게 나누면 모두를 안정시킬 수 있다.`,
+      event_embedding: [0.28, -0.42, 0.14, 0.64, -0.28, 0.22, 0.18, 0.52],
+      actions: [
+        {
+          id: "saves_one_critical",
+          label: "중증 환자 한 명을 우선 치료한다",
+          embedding: [0.22, -0.36, 0.16, 0.72, -0.18, 0.44, 0.22, 0.68],
+          bias: 0.02,
+          outcome: "노인을 살리지만, 어린이들에게 불안이 남는다.",
+          endingWeight: { caregiver: 2, martyr: 1 },
+          sets: {}
+        },
+        {
+          id: "distributes_to_many",
+          label: "다수의 경증 환자에게 나눈다",
+          embedding: [0.58, -0.28, 0.22, 0.64, -0.34, 0.36, 0.12, 0.48],
+          bias: 0.01,
+          outcome: "10명의 어린이를 안정시키지만, 중증 환자는 위험에 처한다.",
+          endingWeight: { caregiver: 2, reformer: 1, changemaker: 1 },
+          sets: {}
+        },
+        {
+          id: "calls_for_more_resources",
+          label: "추가 지원을 요청하며 버틴다",
+          embedding: [0.44, -0.18, 0.36, 0.52, 0.28, 0.48, 0.52, 0.62],
+          bias: -0.01,
+          outcome: "시간이 걸리지만 외부 지원을 끌어들여 모두를 살릴 가능성을 만든다.",
+          endingWeight: { changemaker: 2, reformer: 1 },
+          sets: {}
+        }
+      ]
+    },
+
+    // ── ME004: 금지된 방법 (불법 수단의 정의) ─────────────────────────────────
+    {
+      id: "ME004",
+      arc: "arc6",
+      title: "금지된 방법",
+      type: "forbidden_means",
+      tags: ["정의", "규범", "수단"],
+      requires: {},
+      excludes: {},
+      weight: 0.9,
+      summary: `억울하게 구속된 지인의 무죄를 증명할 증거가 회사 서버 안에 있다.
+해킹하면 증거를 꺼낼 수 있지만 불법이다. 합법적 절차는 너무 느려 재판에 늦는다.`,
+      event_embedding: [-0.28, 0.36, 0.52, 0.44, 0.38, -0.16, -0.44, -0.32],
+      actions: [
+        {
+          id: "hacks_the_server",
+          label: "불법임을 알면서 서버에 접근한다",
+          embedding: [-0.18, 0.24, 0.74, 0.48, 0.44, -0.28, -0.62, -0.56],
+          bias: 0.03,
+          outcome: "증거를 확보하지만, 자신도 법적 위험에 처한다.",
+          endingWeight: { whistleblower: 1, changemaker: 1, exile: 1 },
+          sets: {}
+        },
+        {
+          id: "trusts_legal_process",
+          label: "느리더라도 합법 절차를 따른다",
+          embedding: [0.12, -0.22, -0.48, 0.26, -0.22, 0.62, 0.72, 0.76],
+          bias: 0,
+          outcome: "재판에는 늦을 수 있지만, 법 안에서 정당한 길을 걷는다.",
+          endingWeight: { conformist: 1, survivor: 1, reformer: 1 },
+          sets: {}
+        },
+        {
+          id: "finds_a_whistleblower",
+          label: "내부 제보자를 찾아 합법적으로 꺼낸다",
+          embedding: [0.36, -0.18, 0.22, 0.58, 0.16, 0.44, 0.48, 0.68],
+          bias: -0.02,
+          outcome: "시간과 설득이 필요하지만 법적 위험 없이 증거를 확보한다.",
+          endingWeight: { whistleblower: 2, reformer: 2 },
+          sets: {}
+        }
+      ]
+    },
+
+    // ── ME007: 알고리즘의 차별 ────────────────────────────────────────────────
+    {
+      id: "ME007",
+      arc: "arc6",
+      title: "알고리즘의 차별",
+      type: "algorithmic_bias",
+      tags: ["기술", "차별", "구조"],
+      requires: {},
+      excludes: {},
+      weight: 1.0,
+      summary: `회사 추천 알고리즘이 특정 지역 출신 지원자를 낮게 평가한다는 정황을 발견했다.
+수정하면 출시가 늦고 투자자가 떠날 수 있다. 그대로 내보내면 차별이 자동화된다.`,
+      event_embedding: [-0.22, 0.08, 0.76, 0.18, 0.7, -0.1, -0.3, 0.28],
+      actions: [
+        {
+          id: "ships_anyway",
+          label: "문제를 기록만 하고 출시를 강행한다",
+          embedding: [-0.36, 0.3, -0.44, -0.24, 0.48, -0.22, 0.54, -0.5],
+          bias: 0.03,
+          outcome: "성과는 얻지만, 차별을 방치한 책임이 남는다.",
+          endingWeight: { opportunist: 3, conformist: 2 },
+          memory: "출시 축하 자리에서 웃었다. 그 알고리즘이 누구를 걸러냈는지는 생각하지 않으려 했다.",
+          sets: {}
+        },
+        {
+          id: "delays_release",
+          label: "출시를 늦추고 편향을 수정한다",
+          embedding: [0.24, -0.24, 0.58, 0.32, 0.52, 0.56, 0.18, 0.64],
+          bias: 0,
+          outcome: "투자자와 갈등하지만, 시스템이 사람을 해치지 않게 막는다.",
+          endingWeight: { reformer: 2, changemaker: 2, martyr: 1 },
+          sets: {}
+        },
+        {
+          id: "opens_audit",
+          label: "외부 감사를 받아 공개적으로 검증한다",
+          embedding: [0.18, -0.32, 0.72, 0.24, 0.62, 0.42, -0.18, 0.78],
+          bias: -0.02,
+          outcome: "회사는 흔들리지만, 문제를 공적 기준으로 끌어올린다.",
+          endingWeight: { whistleblower: 2, changemaker: 2, reformer: 1 },
+          memory: "감사 결과가 나온 날, 회의실에 자기 이름을 댄 사람이 없었다. 혼자 서명했다.",
+          sets: {}
+        }
+      ]
+    },
+
+    // ── ME008: 돌봄의 한계 (번아웃) ──────────────────────────────────────────
+    {
+      id: "ME008",
+      arc: "arc6",
+      title: "돌봄의 한계",
+      type: "care_burnout",
+      tags: ["가족", "소진", "책임"],
+      requires: {},
+      excludes: {},
+      weight: 1.0,
+      summary: `가족의 장기 간병과 직장 프로젝트 마감이 같은 주에 겹쳤다.
+한쪽을 선택하면 다른 쪽은 크게 무너진다. 주변은 각자의 책임만 요구한다.`,
+      event_embedding: [0.52, 0.44, -0.18, 0.72, -0.24, 0.18, 0.32, -0.08],
+      actions: [
+        {
+          id: "chooses_family_care",
+          label: "일을 내려놓고 가족을 돌본다",
+          embedding: [0.72, 0.28, -0.2, 0.82, -0.26, 0.12, 0.16, -0.14],
+          bias: 0.02,
+          outcome: "가족은 버틸 수 있지만, 경력과 생계가 크게 흔들린다.",
+          endingWeight: { caregiver: 3, martyr: 1, forgotten: 1 },
+          memory: "마감을 놓친 날 병원 복도에 앉아 있었다. 후회는 없었지만 설명할 수가 없었다.",
+          sets: {}
+        },
+        {
+          id: "chooses_work_deadline",
+          label: "프로젝트를 끝내고 간병은 다른 사람에게 맡긴다",
+          embedding: [-0.18, 0.18, 0.08, -0.36, 0.58, -0.16, 0.42, -0.48],
+          bias: 0.03,
+          outcome: "성과는 지키지만 가족 안에 오래 남을 상처가 생긴다.",
+          endingWeight: { opportunist: 1, conformist: 1, survivor: 2 },
+          memory: "프로젝트를 마감한 날 밤, 병원에서 전화가 왔다. 도착했을 때는 이미 늦었다.",
+          sets: {}
+        },
+        {
+          id: "asks_for_support_network",
+          label: "도움을 요청하고 역할을 재배치한다",
+          embedding: [0.46, -0.18, 0.36, 0.58, 0.16, 0.58, 0.34, 0.52],
+          bias: -0.02,
+          outcome: "완벽하지는 않지만, 혼자 떠안지 않는 구조를 만든다.",
+          endingWeight: { caregiver: 2, reformer: 1, changemaker: 1 },
+          sets: {}
+        }
+      ]
+    },
+
+    // ── ME009: 여론의 재판 ────────────────────────────────────────────────────
+    {
+      id: "ME009",
+      arc: "arc6",
+      title: "여론의 재판",
+      type: "public_shaming",
+      tags: ["평판", "두려움", "공개"],
+      requires: {},
+      excludes: {},
+      weight: 0.9,
+      summary: `과거의 말 한마디가 잘려 퍼지며 온라인에서 공격을 받는다.
+해명하면 더 번질 수 있고, 침묵하면 인정한 것처럼 보인다. 주변 사람들도 거리두기를 시작했다.`,
+      event_embedding: [-0.38, 0.62, 0.18, -0.12, 0.46, -0.46, 0.12, -0.34],
+      actions: [
+        {
+          id: "apologizes_publicly",
+          label: "잘못을 인정하고 공개적으로 사과한다",
+          embedding: [0.28, -0.28, 0.36, 0.42, -0.18, 0.5, 0.48, 0.56],
+          bias: 0,
+          outcome: "일부는 진심을 인정하지만, 공격은 한동안 계속된다.",
+          endingWeight: { reformer: 1, caregiver: 1, survivor: 1 },
+          sets: {}
+        },
+        {
+          id: "counterattacks_crowd",
+          label: "공격한 사람들을 역으로 폭로한다",
+          embedding: [-0.52, 0.54, 0.62, -0.34, 0.64, -0.58, -0.44, -0.5],
+          bias: 0.04,
+          outcome: "전선은 넓어지고, 이긴다 해도 많은 것을 잃는다.",
+          endingWeight: { exile: 2, opportunist: 1, martyr: 1 },
+          sets: {}
+        },
+        {
+          id: "goes_private_and_repairs",
+          label: "공개 대응을 줄이고 당사자에게 직접 수습한다",
+          embedding: [0.34, -0.16, 0.12, 0.58, -0.22, 0.36, 0.2, 0.28],
+          bias: -0.01,
+          outcome: "화려한 반전은 없지만, 실제 관계부터 복구한다.",
+          endingWeight: { caregiver: 1, survivor: 2, forgotten: 1 },
+          sets: {}
+        }
+      ]
+    },
+
+    // ── ME014: 외할머니의 유산 ────────────────────────────────────────────────
+    {
+      id: "ME014",
+      arc: "arc6",
+      title: "외할머니의 유산",
+      type: "family_inheritance_dispute",
+      tags: ["가족", "유산", "침묵"],
+      requires: {},
+      excludes: {},
+      weight: 1.0,
+      summary: `외할머니가 돌아가셨다. 삼일장을 치르고 유언장이 공개됐다.
+평생 모은 재산의 절반은 교회에, 나머지는 외삼촌에게만. 어머니는 아무것도 받지 못했다.
+외삼촌이 할머니의 인지 능력이 흐려졌던 마지막 시기에 유언장 작성을 도왔다는 사실을 친척들은 알고 있지만, 아무도 입 밖에 내지 않는다.
+어머니는 '그냥 잊자'고 한다. 하지만 집에 돌아오는 차 안에서 어머니는 말 한마디 없이 창밖만 바라봤다.`,
+      event_embedding: [0.58, 0.32, -0.22, 0.66, -0.08, 0.18, 0.44, -0.12],
+      actions: [
+        {
+          id: "respects_mothers_wish",
+          label: "어머니의 뜻을 따라 그냥 넘어간다",
+          embedding: [0.68, 0.24, -0.36, 0.72, -0.18, 0.12, 0.58, -0.22],
+          bias: 0.02,
+          outcome: "넘어갔다. 명절마다 외삼촌과 같은 식탁에 앉는 일이 남았다.",
+          endingWeight: { caregiver: 2, conformist: 2, survivor: 1 },
+          sets: {}
+        },
+        {
+          id: "investigates_quietly",
+          label: "어머니에게 알리지 않고 먼저 법적 가능성을 알아본다",
+          embedding: [0.44, -0.14, 0.32, 0.52, 0.22, 0.36, 0.28, 0.48],
+          bias: -0.01,
+          outcome: "변호사가 '이길 수는 있지만 그 뒤에 가족이 남겠냐'고 물었다. 대답하지 못했다.",
+          endingWeight: { reformer: 2, caregiver: 1, whistleblower: 1 },
+          memory: "변호사가 '이길 수 있지만 그 뒤에 가족이 남겠냐'고 물었다. 대답하지 못했다.",
+          sets: {}
+        },
+        {
+          id: "confronts_uncle",
+          label: "외삼촌에게 직접 따진다",
+          embedding: [0.36, 0.28, 0.58, 0.48, 0.14, -0.12, -0.38, 0.64],
+          bias: -0.02,
+          outcome: "외삼촌 눈을 보며 말하는 동안 어머니가 울기 시작했다. 이게 옳은 건지 몰랐지만 더 이상 모른 척은 할 수 없었다.",
+          endingWeight: { whistleblower: 2, exile: 1, martyr: 1 },
+          memory: "외삼촌 눈을 보며 말하는 동안 어머니가 울기 시작했다. 이게 옳은 건지 몰랐다.",
+          sets: {}
+        }
+      ]
+    },
+
+    // ── ME016: K의 두 번째 배신 [requires: joined_k_startup] ──────────────────
+    {
+      id: "ME016",
+      arc: "arc6",
+      title: "K의 두 번째 배신",
+      type: "betrayal_from_inside",
+      tags: ["배신", "연대", "내부"],
+      requires: { joined_k_startup: true },
+      excludes: {},
+      weight: 1.3,
+      summary: `합류한 지 일 년이 지났다. 스타트업은 잘 굴러가고 있다.
+그런데 최근 K의 행동이 이상하다. 공동창업자 J의 지분 계약서가 수정됐다는 이야기를 우연히 들었다.
+J는 모르는 것 같다. 확인해보니 사실이었다. K가 똑같이 하고 있다.
+당신은 내부에 있어서 안다. J는 아직 아무것도 모른다.`,
+      event_embedding: [-0.18, 0.38, 0.62, 0.44, 0.28, -0.14, -0.32, 0.56],
+      actions: [
+        {
+          id: "warns_j_directly",
+          label: "J에게 직접 알린다",
+          embedding: [0.44, -0.12, 0.72, 0.58, -0.22, 0.44, -0.28, 0.78],
+          bias: 0,
+          outcome: "J는 충격을 받았다. K는 그날 이후 당신을 다르게 본다.",
+          endingWeight: { whistleblower: 3, reformer: 1, exile: 1 },
+          memory: "J에게 말하고 나서 K의 얼굴을 마주쳤다. 아무 말 없이 지나쳤다.",
+          sets: {}
+        },
+        {
+          id: "confronts_k_privately",
+          label: "K에게 먼저 따진다",
+          embedding: [0.32, 0.14, 0.54, 0.48, 0.18, 0.22, 0.12, 0.62],
+          bias: -0.01,
+          outcome: "K는 '오해'라고 했다. 표정은 그렇지 않았다.",
+          endingWeight: { reformer: 2, whistleblower: 1, survivor: 1 },
+          sets: {}
+        },
+        {
+          id: "stays_out_of_it",
+          label: "모른 척하고 내 일만 한다",
+          embedding: [-0.28, 0.32, -0.44, -0.18, 0.48, -0.32, 0.62, -0.52],
+          bias: 0.03,
+          outcome: "내 계약서는 안전했다. J의 일은 내 일이 아니라고 생각했다. 생각하려 했다.",
+          endingWeight: { conformist: 3, opportunist: 2 },
+          memory: "J가 나중에 알게 됐을 때 내 이름을 꺼냈다는 얘기를 전해 들었다.",
+          sets: {}
+        }
+      ]
+    },
+
+    // ── ME017: K의 전화 [requires: told_k_truth] ──────────────────────────────
+    {
+      id: "ME017",
+      arc: "arc6",
+      title: "K의 전화",
+      type: "unexpected_vindication",
+      tags: ["화해", "선택", "두 번째 기회"],
+      requires: { told_k_truth: true },
+      excludes: {},
+      weight: 1.3,
+      summary: `솔직하게 거절한 뒤 연락이 끊겼던 K가 3년 만에 전화를 걸어왔다.
+K의 두 번째 스타트업은 올해 투자를 받으며 크게 성장했다.
+처음에 K는 근황을 묻더니 이렇게 말했다. '그때 네가 그 말 해줘서, 내가 달라질 수 있었어. 그 공동창업자한테도 연락해서 사과했어.'
+그리고 제안을 꺼낸다. 이번 스타트업의 파트너로 함께하자고.`,
+      event_embedding: [0.36, -0.22, 0.28, 0.58, 0.42, 0.34, 0.18, 0.52],
+      actions: [
+        {
+          id: "accepts_k_offer",
+          label: "K의 제안을 받아들인다",
+          embedding: [0.52, -0.18, 0.22, 0.68, 0.38, 0.42, 0.24, 0.46],
+          bias: 0,
+          outcome: "이번엔 달랐다. 아니, 다를 것이라고 생각했다.",
+          endingWeight: { reformer: 2, changemaker: 2, caregiver: 1 },
+          memory: "K와 악수하면서 3년 전 통화가 떠올랐다. 그때는 잘한 건지 몰랐다.",
+          sets: {}
+        },
+        {
+          id: "declines_k_again",
+          label: "고맙지만 이번에도 거절한다",
+          embedding: [0.18, -0.08, 0.44, 0.32, -0.12, 0.36, 0.28, 0.62],
+          bias: -0.01,
+          outcome: "K는 이번엔 웃으며 받아들였다. 관계는 달라졌다.",
+          endingWeight: { exile: 2, survivor: 2, reformer: 1 },
+          memory: "K가 먼저 전화를 끊었다. 이번엔 불편하지 않았다.",
+          sets: {}
+        }
+      ]
+    },
+
+    // ── ME018: 아버지의 전화 ──────────────────────────────────────────────────
+    {
+      id: "ME018",
+      arc: "arc6",
+      title: "아버지의 전화",
+      type: "family_favor_request",
+      tags: ["가족", "청탁", "의리"],
+      requires: {},
+      excludes: {},
+      weight: 1.0,
+      summary: `저녁 늦게 아버지한테서 전화가 왔다. 지인 아들이 당신 회사 면접을 앞두고 있다며,
+'이름만 한번 얘기해줘도 되지 않냐'고 한다.
+아버지는 '네가 이런 부탁 싫어하는 거 안다. 근데 이번 한 번만'이라고 했다.
+그 말이 맞다. 아버지는 이런 부탁을 처음 한다.
+그 지인이 어머니 병원비를 빌려줬던 사람이라는 것도 알고 있다.`,
+      event_embedding: [0.54, 0.28, -0.18, 0.64, 0.12, -0.08, 0.42, -0.14],
+      actions: [
+        {
+          id: "agrees_to_mention",
+          label: "이름 정도는 말해두겠다고 한다",
+          embedding: [0.62, 0.44, -0.36, 0.72, 0.22, -0.18, 0.34, -0.28],
+          bias: 0.03,
+          outcome: "전화를 끊고 나서 담당자한테 짧은 메시지를 보냈다. 그게 전부였다. 그게 전부가 아닐 수도 있다.",
+          endingWeight: { caregiver: 2, opportunist: 2, conformist: 1 },
+          memory: "메시지를 보내고 나서 몇 번이나 다시 읽었다. 지우지는 않았다.",
+          sets: {}
+        },
+        {
+          id: "declines_explains",
+          label: "못 하겠다고, 이유를 말한다",
+          embedding: [0.24, -0.22, 0.58, 0.36, -0.28, 0.52, 0.18, 0.74],
+          bias: -0.01,
+          outcome: "아버지는 '그래, 알았다'고 했다. 목소리가 낮았다. 그 뒤로 며칠 동안 연락이 없었다.",
+          endingWeight: { reformer: 2, whistleblower: 1, exile: 1 },
+          memory: "아버지가 '그래, 알았다'고 했을 때의 목소리가 며칠 동안 머릿속에 남았다.",
+          sets: {}
+        },
+        {
+          id: "stalls_with_excuse",
+          label: "내가 거기 영향력이 없다며 에둘러 거절한다",
+          embedding: [-0.08, 0.18, -0.22, 0.12, 0.24, -0.14, 0.56, -0.32],
+          bias: 0.01,
+          outcome: "아버지는 '그렇구나' 하고 넘어갔다. 거짓말은 아니었지만 사실도 아니었다.",
+          endingWeight: { conformist: 2, survivor: 2 },
+          sets: {}
+        }
+      ]
+    },
+
+    // ── ME020: 익명 제보 ──────────────────────────────────────────────────────
+    {
+      id: "ME020",
+      arc: "arc6",
+      title: "익명 제보",
+      type: "anonymous_whistleblowing",
+      tags: ["고발", "위험", "구조"],
+      requires: {},
+      excludes: {},
+      weight: 1.1,
+      summary: `회사 안에서 조직적인 회계 조작이 이루어지고 있다는 정황을 알게 됐다.
+당신이 직접 관여한 건 아니지만, 관련 자료가 담긴 메일을 우연히 봤다.
+언론에 익명으로 제보하는 방법이 있다. 들키면 모든 게 끝난다.
+하지만 아무도 모르게 넘어가면 이 구조는 계속된다.`,
+      event_embedding: [0.08, 0.32, 0.74, 0.22, 0.46, 0.28, -0.24, 0.68],
+      actions: [
+        {
+          id: "reports_anonymously",
+          label: "익명으로 언론에 제보한다",
+          embedding: [0.14, -0.24, 0.82, 0.28, 0.18, 0.44, -0.32, 0.86],
+          bias: -0.01,
+          outcome: "제보 메일을 보내고 화면을 닫았다. 언제 어떻게 터질지 모른다.",
+          endingWeight: { whistleblower: 3, changemaker: 2, martyr: 1 },
+          memory: "제보 메일의 전송 버튼을 누르기 전에 30초 동안 화면을 바라봤다.",
+          sets: { filed_anonymous_report: true }
+        },
+        {
+          id: "saves_evidence_quietly",
+          label: "일단 자료만 따로 보관해둔다",
+          embedding: [0.08, 0.14, 0.34, 0.18, 0.28, 0.12, 0.22, 0.42],
+          bias: 0.02,
+          outcome: "외장하드에 저장했다. 언젠가 필요할지도 모른다는 생각으로.",
+          endingWeight: { survivor: 2, whistleblower: 1 },
+          sets: { saved_evidence: true }
+        },
+        {
+          id: "deletes_and_forgets",
+          label: "본 것을 지우고 모른 척한다",
+          embedding: [-0.24, 0.36, -0.62, -0.28, 0.42, -0.36, 0.58, -0.64],
+          bias: 0.03,
+          outcome: "메일 창을 닫았다. 본 게 없는 사람이 되기로 했다.",
+          endingWeight: { conformist: 3, forgotten: 1 },
+          memory: "메일 창을 닫은 뒤로 그 숫자들이 며칠간 머릿속에 맴돌았다.",
+          sets: {}
+        }
+      ]
+    },
+
+    // ── ME021a: 기자가 찾아왔다 [requires: filed_anonymous_report] ────────────
+    {
+      id: "ME021a",
+      arc: "arc6",
+      title: "기자가 찾아왔다",
+      type: "journalist_contact",
+      tags: ["언론", "공개", "결단"],
+      requires: { filed_anonymous_report: true },
+      excludes: {},
+      weight: 1.3,
+      summary: `제보한 지 두 달이 지났다. 그리고 오늘 오후, 경제부 기자라는 사람에게서 문자가 왔다.
+'제보 내용과 관련해 직접 여쭤볼 게 있습니다.'
+익명 제보였는데 어떻게 연락처를 알아낸 건지 모른다.
+기자를 만나면 이제 익명이 아니게 된다. 만나지 않으면 기사가 약해질 수 있다.`,
+      event_embedding: [-0.14, 0.42, 0.68, 0.18, 0.54, 0.22, -0.18, 0.64],
+      actions: [
+        {
+          id: "meets_journalist",
+          label: "만나기로 한다. 더 이상 숨지 않는다",
+          embedding: [0.22, -0.28, 0.76, 0.34, 0.12, 0.48, -0.24, 0.84],
+          bias: 0,
+          outcome: "카페에서 한 시간 동안 얘기했다. 기자는 녹음기를 켰다. 이제 되돌릴 수 없다.",
+          endingWeight: { whistleblower: 3, changemaker: 2, martyr: 2 },
+          memory: "기자 앞에 앉아서 처음으로 내 이름을 댔다. 목소리가 떨리지 않으려 했다.",
+          sets: {}
+        },
+        {
+          id: "declines_journalist",
+          label: "모른다고 답하고 연락을 끊는다",
+          embedding: [-0.18, 0.24, -0.32, -0.14, 0.38, -0.22, 0.52, -0.44],
+          bias: 0.02,
+          outcome: "모른다고 했다. 기사는 제한적으로 나왔다. 회사는 '사실무근'이라고 했다.",
+          endingWeight: { survivor: 2, conformist: 1, forgotten: 1 },
+          sets: {}
+        }
+      ]
+    },
+
+    // ── ME021b: 증거의 무게 [requires: saved_evidence] ────────────────────────
+    {
+      id: "ME021b",
+      arc: "arc6",
+      title: "증거의 무게",
+      type: "evidence_decision",
+      tags: ["증거", "감사", "판단"],
+      requires: { saved_evidence: true },
+      excludes: {},
+      weight: 1.3,
+      summary: `조용히 자료만 모아둔 지 반 년이 지났다. 그 사이 회사 내부 감사가 시작됐고, 감사팀이 직원들을 개별 면담하고 있다.
+당신 차례가 내일이다. 외장하드는 아직 서랍 안에 있다.
+제출하면 조사가 달라질 수 있다. 하지만 당신이 그 자료를 갖고 있었다는 사실 자체가 문제가 될 수도 있다.`,
+      event_embedding: [0.12, 0.28, 0.58, 0.24, 0.36, 0.34, 0.14, 0.62],
+      actions: [
+        {
+          id: "submits_evidence",
+          label: "내일 면담에서 자료를 제출한다",
+          embedding: [0.24, -0.18, 0.72, 0.38, -0.12, 0.56, 0.08, 0.78],
+          bias: 0,
+          outcome: "자료를 꺼냈다. 감사관이 오래 들여다봤다. 면담이 두 시간이 됐다.",
+          endingWeight: { whistleblower: 3, reformer: 2, martyr: 1 },
+          memory: "외장하드를 내밀면서 이제 내 손을 떠났다는 걸 느꼈다.",
+          sets: {}
+        },
+        {
+          id: "keeps_evidence_hidden",
+          label: "자료를 제출하지 않고 면담을 마친다",
+          embedding: [-0.14, 0.22, -0.28, -0.08, 0.44, -0.18, 0.48, -0.36],
+          bias: 0.02,
+          outcome: "면담은 무난히 끝났다. 외장하드는 아직 서랍에 있다.",
+          endingWeight: { survivor: 3, conformist: 1 },
+          memory: "면담을 마치고 자리로 돌아와 서랍을 한 번 열었다가 닫았다.",
+          sets: {}
+        }
+      ]
+    },
+
+    // ── ME023: 탄원서 ─────────────────────────────────────────────────────────
+    {
+      id: "ME023",
+      arc: "arc6",
+      title: "탄원서",
+      type: "petition_under_pressure",
+      tags: ["연대", "위험", "동료"],
+      requires: {},
+      excludes: {},
+      weight: 1.0,
+      summary: `회사가 지방 공장 직원 200명을 구조조정하겠다고 발표했다.
+며칠 뒤, 사무직 직원들 사이에서 반대 탄원서가 돌기 시작했다.
+서명자 명단은 결국 위에 올라간다. 찍힐 수 있다는 걸 모두 안다.
+그런데 당신 바로 앞자리 동료가 리스트를 내밀었다. '같이 서명할 거지?'`,
+      event_embedding: [0.32, 0.18, 0.56, 0.44, -0.14, 0.28, -0.22, 0.52],
+      actions: [
+        {
+          id: "signs_petition",
+          label: "서명한다",
+          embedding: [0.44, -0.08, 0.68, 0.52, -0.22, 0.42, -0.18, 0.72],
+          bias: 0,
+          outcome: "이름을 적었다. 손이 떨리지는 않았다. 떨렸는지도 모른다.",
+          endingWeight: { whistleblower: 2, reformer: 2, martyr: 1 },
+          memory: "탄원서에 이름을 쓰고 나서 리스트를 다시 내려다봤다. 내 이름이 거기 있었다.",
+          sets: {}
+        },
+        {
+          id: "declines_politely",
+          label: "개인 사정을 이유로 거절한다",
+          embedding: [-0.12, 0.22, -0.34, -0.08, 0.38, -0.16, 0.54, -0.38],
+          bias: 0.03,
+          outcome: "동료는 '그래, 어쩔 수 없지'라고 했다. 오후 내내 눈이 마주치지 않았다.",
+          endingWeight: { survivor: 3, conformist: 1 },
+          memory: "동료가 '그래, 어쩔 수 없지'라고 했을 때의 표정이 생각보다 오래 남았다.",
+          sets: {}
+        },
+        {
+          id: "checks_legal_risks_first",
+          label: "서명 전에 법적 불이익 여부를 먼저 확인한다",
+          embedding: [0.18, 0.12, 0.28, 0.32, 0.16, 0.28, 0.42, 0.44],
+          bias: -0.01,
+          outcome: "노무사에게 짧게 문의했다. 보복 금지 조항이 있지만, 현실적으로 보장되지는 않는다고 했다.",
+          endingWeight: { reformer: 1, survivor: 1, whistleblower: 1 },
+          sets: {}
+        }
+      ]
+    },
+
+    // ── ME024: 다른 팀으로 ────────────────────────────────────────────────────
+    {
+      id: "ME024",
+      arc: "arc6",
+      title: "다른 팀으로",
+      type: "internal_transfer_decision",
+      tags: ["커리어", "동료", "책임"],
+      requires: {},
+      excludes: {},
+      weight: 1.0,
+      summary: `다른 부서에서 이동 제안이 왔다. 현재 팀보다 연봉도 높고 업무도 맞다.
+지금 팀은 프로젝트가 막바지라 인원이 빠지면 힘들다.
+팀장은 아무 말도 하지 않았지만 표정이 굳었다.
+이동은 당신의 권리다. 그리고 팀은 당신이 없으면 무너질 수도 있다.`,
+      event_embedding: [0.14, -0.18, 0.12, 0.28, 0.54, 0.38, 0.32, 0.22],
+      actions: [
+        {
+          id: "transfers_now",
+          label: "제안을 받아들이고 이동한다",
+          embedding: [-0.22, 0.12, 0.18, -0.14, 0.62, 0.14, 0.38, -0.18],
+          bias: 0.02,
+          outcome: "이동했다. 새 팀은 좋았다. 전 팀 프로젝트는 어떻게 됐는지 나중에야 들었다.",
+          endingWeight: { opportunist: 2, survivor: 2 },
+          sets: { transferred_away: true }
+        },
+        {
+          id: "delays_for_team",
+          label: "프로젝트가 끝날 때까지 기다렸다가 이동한다",
+          embedding: [0.44, -0.14, 0.08, 0.48, 0.22, 0.32, 0.28, 0.42],
+          bias: -0.01,
+          outcome: "세 달을 기다렸다. 제안이 아직 유효한지는 확인해봐야 했다.",
+          endingWeight: { caregiver: 2, reformer: 1, survivor: 1 },
+          sets: {}
+        },
+        {
+          id: "declines_offer",
+          label: "제안을 거절하고 현 팀에 남는다",
+          embedding: [0.52, -0.08, -0.14, 0.58, -0.12, 0.18, 0.44, 0.12],
+          bias: 0,
+          outcome: "팀장이 뭔가 말하려다 그냥 자리로 돌아갔다. 프로젝트는 무사히 끝났다.",
+          endingWeight: { caregiver: 3, martyr: 1 },
+          memory: "팀장이 뭔가 말하려다 그냥 돌아가는 뒷모습을 봤다. 묻지 않았다.",
+          sets: {}
+        }
+      ]
     }
 
   ]

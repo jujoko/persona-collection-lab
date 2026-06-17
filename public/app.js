@@ -2,6 +2,7 @@ const form = document.querySelector("#characterForm");
 const creationPanel = form;
 const submitBtn = document.querySelector("#submitBtn");
 const resultList = document.querySelector("#resultList");
+const resultsPanel = document.querySelector(".results-panel");
 const emptyState = document.querySelector("#emptyState");
 const latentBars = document.querySelector("#traitBars");
 const datasetPreview = document.querySelector("#datasetPreview");
@@ -199,7 +200,7 @@ function renderAvatar(simulation, size = "large") {
 function renderPrimaryResultLayout(simulation, developmentCards, dynamicRuns, ending) {
   return `
     <div class="result-section-title primary-section-title">
-      <p class="eyebrow">Step 3 · Now Playing</p>
+      <p class="eyebrow">Now Playing</p>
       <h3>먼저 이 카드만 읽고, 캐릭터의 선택을 맞혀보세요</h3>
     </div>
     ${renderPredictionPanel(simulation)}
@@ -403,7 +404,7 @@ async function runSimulation(character) {
 
   try {
     // ── 임베딩 ──────────────────────────────────────────────────────────────
-    submitBtn.textContent = "임베딩 모델 실행 중";
+    submitBtn.textContent = "캐릭터를 생성하는 중...";
     const embeddingPayload = await fetchPromptEmbedding(character.prompt);
     if (embeddingPayload) {
       character.external_embedding = embeddingPayload.embedding;
@@ -418,7 +419,7 @@ async function runSimulation(character) {
     const neuralModel = ensureNeuralModel(character);
 
     // ── M2 결정 모드 시도 ────────────────────────────────────────────────────
-    submitBtn.textContent = "M2 시뮬레이션 실행 중";
+    submitBtn.textContent = "캐릭터를 생성하는 중...";
     const simulation = await runSimulationWithM2(character, neuralModel);
 
     simulation.baseline_events = simulation.events.map(event => ({ ...event }));
@@ -566,6 +567,7 @@ async function runSimulationWithM2(character, neuralModel) {
 function renderSimulation(simulation) {
   emptyState.style.display = "none";
   if (creationPanel) creationPanel.hidden = true;
+  if (resultsPanel) resultsPanel.hidden = false;
   ensureGameplayState(simulation);
   activeCharacterBadge.textContent = simulation.character.generated_name;
   renderLatentBars(simulation.latent_persona, simulation.persona_structure_prior.latent_dimensions);
@@ -761,7 +763,10 @@ function sourceEventFor(simulation, eventId) {
       actions: eventLog.source_actions
     };
   }
-  return PersonaEngine.EVENTS.find(event => event.id === eventId);
+  const arcEvent = (typeof STORY_ARCS !== "undefined")
+    ? STORY_ARCS.flatMap(arc => arc.events || []).find(e => e.id === eventId)
+    : null;
+  return arcEvent || PersonaEngine.EVENTS.find(event => event.id === eventId);
 }
 
 function predictionFor(simulation, eventId) {
@@ -1235,13 +1240,13 @@ renderPrimaryResultLayout = function prologueFirstResultLayout(simulation, devel
   return `
     ${showPrologue ? `
       <div class="result-section-title primary-section-title">
-        <p class="eyebrow">Step 2 · Prologue</p>
+        <p class="eyebrow">Birth Background</p>
         <h3>먼저 이 사람이 어떤 시작 조건을 타고났는지 읽어보세요</h3>
       </div>
       ${renderBirthProloguePanel(simulation)}
     ` : `
       <div class="result-section-title primary-section-title">
-        <p class="eyebrow">Step 3 · 현재 사건</p>
+        <p class="eyebrow">현재 사건</p>
         <h3>이제 이 캐릭터가 다음 장면에서 어떤 선택을 할지 예측하세요</h3>
         <p class="section-help">현재 사건은 캐릭터가 살아가며 마주치는 장면입니다. 선택지는 플레이어의 선택이 아니라, “이 사람이라면 무엇을 할까?”를 맞히는 예측입니다.</p>
       </div>
@@ -1358,13 +1363,13 @@ renderPrimaryResultLayout = function birthBackgroundFirstResultLayout(simulation
   return `
     ${showBirthBackground ? `
       <div class="result-section-title primary-section-title">
-        <p class="eyebrow">Step 2 · Birth Background</p>
+        <p class="eyebrow">Birth Background</p>
         <h3>먼저 이 사람이 어떤 조건에서 태어났는지 읽어보세요.</h3>
       </div>
       ${renderBirthProloguePanel(simulation)}
     ` : `
       <div class="result-section-title primary-section-title">
-        <p class="eyebrow">Step 3 · Current Event</p>
+        <p class="eyebrow">Current Event</p>
         <h3>이 캐릭터가 다음 장면에서 어떤 선택을 할지 예측하세요.</h3>
         <p class="section-help">사건은 출생 이후의 시간 흐름을 따라 열립니다. 선택지는 플레이어가 고르는 행동이 아니라, 이 사람이 실제로 할 행동을 맞히는 예측입니다.</p>
       </div>
@@ -1393,11 +1398,9 @@ renderPrimaryResultLayout = function birthBackgroundFirstResultLayout(simulation
 
 function collectMemories(simulation) {
   return simulation.events.flatMap(event => {
-    const sourceEvent = PersonaEngine.EVENTS.find(e => e.id === event.event_id);
-    if (!sourceEvent) return [];
-    const sourceAction = sourceEvent.actions.find(a => a.id === event.action);
-    if (!sourceAction?.memory) return [];
-    return [{ eventId: event.event_id, title: event.event_title, memory: sourceAction.memory }];
+    const memory = event.action_memory;
+    if (!memory) return [];
+    return [{ eventId: event.event_id, title: event.event_title, memory }];
   });
 }
 
@@ -1852,6 +1855,7 @@ document.querySelector("#resetBtn").addEventListener("click", () => {
   state.feedback = [];
   resultList.innerHTML = "";
   if (creationPanel) creationPanel.hidden = false;
+  if (resultsPanel) resultsPanel.hidden = true;
   if (adminModelPanel) adminModelPanel.innerHTML = "";
   emptyState.style.display = "grid";
   activeCharacterBadge.textContent = "대기 중";
@@ -1862,5 +1866,9 @@ document.querySelector("#resetBtn").addEventListener("click", () => {
 });
 
 ensureDefaultPrompt();
-drawNetwork();
+if (state.simulations.length > 0) {
+  renderSimulation(state.simulations.at(-1));
+} else {
+  drawNetwork();
+}
 renderDataset();

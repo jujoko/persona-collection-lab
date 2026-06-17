@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Persona Collection Lab</title>
+  <title>페르소나 궤적</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -11,8 +11,7 @@
     <section class="workspace">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Persona Prediction Game</p>
-          <h1>Persona Collection Lab</h1>
+          <h1>페르소나 궤적</h1>
         </div>
         <div class="topbar-actions">
           <button id="loadSampleBtn" type="button">샘플 불러오기</button>
@@ -22,32 +21,18 @@
       </header>
 
       <nav class="mode-tabs" aria-label="화면 전환">
-        <button class="mode-tab active" type="button" data-view-target="userView">플레이</button>
-        <button class="mode-tab" type="button" data-view-target="endingGalleryView">엔딩 도감</button>
-        <button class="mode-tab" type="button" data-view-target="adminView">연구 로그</button>
-      </nav>
-
-      <section class="hero-band">
-        <div class="world-copy">
-          <p class="eyebrow">World W002 · Modern Korea</p>
-          <h2>캐릭터의 선택을 먼저 읽는 게임</h2>
-          <p>이름과 페르소나를 입력하면 한 사람의 잠재 성향이 만들어집니다. 이후 연속 사건마다 “이 사람이라면 무엇을 선택할까?”를 예측하세요. 선택 결과는 다음 사건과 경로에 영향을 줍니다.</p>
-          <div class="world-tags">
-            <span>성장</span>
-            <span>관계</span>
-            <span>입시</span>
-            <span>직장</span>
-            <span>선택 예측</span>
-          </div>
+        <div class="mode-tab-group">
+          <button class="mode-tab active" type="button" data-view-target="userView">플레이</button>
+          <button class="mode-tab" type="button" data-view-target="endingGalleryView">엔딩 도감</button>
         </div>
-      </section>
+        <button class="mode-tab admin-mode-tab" type="button" data-view-target="adminView">연구 로그</button>
+      </nav>
 
       <section id="userView" class="view-section active">
         <section class="main-grid user-grid">
           <form id="characterForm" class="panel creation-panel">
             <div class="panel-head">
               <div>
-                <p class="eyebrow">Step 1</p>
                 <h2>캐릭터 만들기</h2>
               </div>
               <span class="counter" id="characterCount">0명</span>
@@ -60,10 +45,11 @@
 
             <label>
               페르소나 설명
-              <textarea id="promptInput" name="prompt" rows="9">서울 변두리의 조용한 가정에서 자랐다. 부모의 기대가 컸고, 어릴 때부터 실패하면 사랑받지 못할까 봐 불안해했다. 지금은 안정적인 삶을 원하지만, 부당한 일을 보면 쉽게 외면하지 못한다.</textarea>
+              <textarea id="promptInput" name="prompt" rows="9">서울 변두리의 조용한 가정에서 자랐다. 부모의 기대가 컸고, 어린 시절에는 실패하면 사랑받지 못할까 봐 불안해했다. 지금은 안정적인 삶을 원하지만 부당한 일을 보면 쉽게 외면하지 못한다.</textarea>
             </label>
+
             <div class="prompt-guide">
-              <strong>넣으면 좋아요</strong>
+              <strong>넣으면 좋은 것</strong>
               <span>가정환경</span>
               <span>어릴 때의 경험</span>
               <span>원하는 것</span>
@@ -71,10 +57,10 @@
               <span>사회에서의 태도</span>
             </div>
 
-            <button id="submitBtn" class="primary-action" type="submit">Step 2 · 예측 캠페인 시작</button>
+            <button id="submitBtn" class="primary-action" type="submit">캐릭터 생성</button>
           </form>
 
-          <section class="panel results-panel">
+          <section class="panel results-panel" hidden>
             <div class="panel-head">
               <div>
                 <p class="eyebrow">Story Flow</p>
@@ -85,7 +71,7 @@
               </div>
             </div>
             <div id="emptyState" class="empty-state">
-              왼쪽에서 캐릭터를 만든 뒤 캠페인을 시작하세요. 다음 화면에서는 가장 위의 큰 카드만 먼저 읽으면 됩니다.
+              캐릭터를 만들면 출생 배경과 첫 사건이 여기에 나타납니다.
             </div>
             <div id="resultList" class="result-list"></div>
           </section>

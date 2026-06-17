@@ -71,6 +71,51 @@ const FLAG_DEFINITIONS = {
     values: ["good", "warning", "chronic"],
     set_in: "arc6~7",
     description: "건강 상태. arc7 이벤트 심각도 조정"
+  },
+  workplace_stance: {
+    values: ["conformist", "reformer", "cautious"],
+    set_in: "arc5",
+    description: "초기 직장에서 관행과 개선 요구에 반응한 방식"
+  },
+  integrity_stance: {
+    values: ["reported", "silent", "confronted"],
+    set_in: "arc5",
+    description: "부정과 양심 갈등 앞에서 형성된 태도"
+  },
+  testified_against_park: {
+    values: [false, true],
+    set_in: "arc5",
+    description: "직장 내 괴롭힘 조사에서 증언했는지 여부"
+  },
+  denied_testimony: {
+    values: [false, true],
+    set_in: "arc5",
+    description: "직장 내 괴롭힘 조사에서 증언을 회피했는지 여부"
+  },
+  joined_k_startup: {
+    values: [false, true],
+    set_in: "arc5",
+    description: "K의 스타트업에 합류했는지 여부"
+  },
+  told_k_truth: {
+    values: [false, true],
+    set_in: "arc5",
+    description: "K에게 과거 문제를 솔직히 말했는지 여부"
+  },
+  filed_anonymous_report: {
+    values: [false, true],
+    set_in: "arc6",
+    description: "익명 제보를 제출했는지 여부"
+  },
+  saved_evidence: {
+    values: [false, true],
+    set_in: "arc6",
+    description: "증거 자료를 보관했는지 여부"
+  },
+  transferred_away: {
+    values: [false, true],
+    set_in: "arc6",
+    description: "이전 팀에서 이동했는지 여부"
   }
 };
 
@@ -91,7 +136,16 @@ const FLAG_DEFAULTS = {
   career_start: null,
   reputation: "medium",
   family_structure: "single",
-  health: "good"
+  health: "good",
+  workplace_stance: null,
+  integrity_stance: null,
+  testified_against_park: false,
+  denied_testimony: false,
+  joined_k_startup: false,
+  told_k_truth: false,
+  filed_anonymous_report: false,
+  saved_evidence: false,
+  transferred_away: false
 };
 
 /**

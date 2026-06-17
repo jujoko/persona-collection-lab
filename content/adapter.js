@@ -88,7 +88,8 @@ function adaptAction(action, flags) {
     embedding: action.embedding || [],         // 없으면 빈 배열 (engine fallback)
     endingWeight: action.endingWeight || {},
     cueWords: action.cueWords || [],
-    bias: action.bias ?? 0
+    bias: action.bias ?? 0,
+    memory: action.memory || null
   };
 }
 

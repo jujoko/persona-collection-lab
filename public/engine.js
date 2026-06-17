@@ -1949,10 +1949,23 @@
     const endingScores = {};
     let routeProbability = 1;
     let currentLatent = [...adultLatent];
-    const unlockedFlags = new Set();
     const eventResults = [];
-    for (const event of EVENTS) {
-      if (event.requires && !unlockedFlags.has(event.requires)) continue;
+    const innateSeed = String(character.innate_seed || `${character.id || ""}|${promptText}`);
+    const storyArcs = (typeof globalThis !== "undefined" && globalThis.STORY_ARCS) ? globalThis.STORY_ARCS : [];
+    const storyRun = (typeof globalThis !== "undefined" && globalThis.StoryAdapter)
+      ? globalThis.StoryAdapter.createRun(storyArcs, { flags: {}, innateSeed })
+      : null;
+    const eventSource = storyRun ? { next: () => storyRun.nextEvent() } : { _pool: [...EVENTS], _flags: new Set(), next() {
+      while (this._pool.length) {
+        const ev = this._pool.shift();
+        if (ev.requires && !this._flags.has(ev.requires)) continue;
+        return ev;
+      }
+      return null;
+    }};
+    let nextEvent;
+    while ((nextEvent = eventSource.next()) !== null) {
+      const event = nextEvent;
       const routeSeed = `${character.id || characterText(character)}:${character.innate_seed || "no-seed"}:${event.id}`;
       const interpretation = interpretPersonaForEvent(event, currentLatent, promptText, structurePrior, compatibleModel, routeSeed);
       const action = interpretation.action;
@@ -1961,7 +1974,8 @@
       Object.entries(action.endingWeight).forEach(([endingKey, weight]) => {
         endingScores[endingKey] = (endingScores[endingKey] || 0) + weight;
       });
-      if (action.unlocks) unlockedFlags.add(action.unlocks);
+      if (storyRun) { storyRun.applyAction(action); }
+      else if (action.unlocks) { eventSource._flags.add(action.unlocks); }
       const latentBefore = [...currentLatent];
       const latentAfter = updatePersonaState(currentLatent, event.event_embedding, action.embedding, {
         eventId: event.id,
@@ -1981,6 +1995,7 @@
         action_label: action.label,
         action_embedding: action.embedding,
         action_summary: action.outcome,
+        action_memory: action.memory || null,
         latent_before: latentBefore,
         latent_after: latentAfter,
         m1_update_rule: "state_transition_from_event_action",
@@ -2050,16 +2065,30 @@
     let currentLatent = normalize(latentVector.map(value => clamp(value)));
     const compatibleModel = isCompatibleModel(neuralModel, structurePrior) ? neuralModel : null;
     let routeProbability = 1;
-    const dynFlags = new Set();
     const events = [];
-    for (const event of EVENTS) {
-      if (event.requires && !dynFlags.has(event.requires)) continue;
+    const dynInnateSeed = String(character.innate_seed || `${character.id || ""}|${promptText}|${runLabel}`);
+    const dynArcs = (typeof globalThis !== "undefined" && globalThis.STORY_ARCS) ? globalThis.STORY_ARCS : [];
+    const dynRun = (typeof globalThis !== "undefined" && globalThis.StoryAdapter)
+      ? globalThis.StoryAdapter.createRun(dynArcs, { flags: {}, innateSeed: dynInnateSeed })
+      : null;
+    const dynSource = dynRun ? { next: () => dynRun.nextEvent() } : { _pool: [...EVENTS], _flags: new Set(), next() {
+      while (this._pool.length) {
+        const ev = this._pool.shift();
+        if (ev.requires && !this._flags.has(ev.requires)) continue;
+        return ev;
+      }
+      return null;
+    }};
+    let dynNext;
+    while ((dynNext = dynSource.next()) !== null) {
+      const event = dynNext;
       const routeSeed = `${character.id || promptText}:${runLabel}:${event.id}`;
       const interpretation = interpretPersonaForEvent(event, currentLatent, promptText, structurePrior, compatibleModel, routeSeed);
       const action = interpretation.action;
       const rationale = interpretation.rationale;
       routeProbability *= action.choice_probability || 1;
-      if (action.unlocks) dynFlags.add(action.unlocks);
+      if (dynRun) { dynRun.applyAction(action); }
+      else if (action.unlocks) { dynSource._flags.add(action.unlocks); }
       const latentBefore = [...currentLatent];
       const latentAfter = updatePersonaState(currentLatent, event.event_embedding, action.embedding, {
         eventId: event.id,

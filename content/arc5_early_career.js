@@ -465,6 +465,430 @@ const ARC5_EARLY_CAREER = {
           sets: { career_start: "major_corp", reputation: "medium" }
         }
       ]
+    },
+
+    // ── ME022: 선배의 방식 (신입 관행 딜레마) ─────────────────────────────────
+    {
+      id: "ME022",
+      arc: "arc5",
+      title: "선배의 방식",
+      type: "generational_workplace_conflict",
+      tags: ["직장", "관행", "세대"],
+      requires: {},
+      excludes: {},
+      weight: 1.2,
+      summary: `입사한 지 두 달이 됐다. 팀에서 가장 경력이 긴 윤 차장이 오늘도 당신 옆에 앉았다.
+"이 보고서는 원래 이렇게 쓰는 거야."
+그런데 그 방식은 느리고, 수치를 임의로 반올림하며, 공식 양식도 아니다.
+회사 전체가 이 방식으로 수년째 보고해왔다.
+문제를 제기하면 '신입이 뭘 안다고'가 될 것을 안다. 그냥 따르면 이 방식이 계속된다.`,
+      event_embedding: [-0.08, 0.24, 0.42, 0.18, 0.36, 0.12, 0.54, 0.38],
+      actions: [
+        {
+          id: "follows_senior",
+          label: "일단 선배 방식대로 따른다",
+          embedding: [-0.18, 0.34, -0.48, 0.12, 0.42, -0.22, 0.68, -0.44],
+          bias: 0.04,
+          outcome: "윤 차장이 흡족해했다. 적응했다는 말을 들었다. 보고서는 오늘도 그 방식으로 올라갔다.",
+          endingWeight: { conformist: 3, survivor: 2 },
+          sets: { workplace_stance: "conformist" }
+        },
+        {
+          id: "raises_issue_privately",
+          label: "윤 차장에게 개인적으로 다른 방식을 제안해본다",
+          embedding: [0.28, -0.12, 0.44, 0.38, 0.14, 0.32, 0.22, 0.58],
+          bias: -0.01,
+          outcome: "윤 차장은 잠시 생각하더니 '한번 해봐' 했다. 의외였다.",
+          endingWeight: { reformer: 2, caregiver: 1, whistleblower: 1 },
+          memory: "윤 차장이 '한번 해봐'라고 했을 때, 예상치 못한 대답이라 잠시 말을 잃었다.",
+          sets: { workplace_stance: "reformer" }
+        },
+        {
+          id: "reports_to_team_lead_quietly",
+          label: "팀장에게 조용히 문의한다",
+          embedding: [0.12, 0.08, 0.32, 0.24, 0.28, 0.38, 0.44, 0.46],
+          bias: 0.01,
+          outcome: "팀장은 '예전부터 그랬어'라고만 했다. 문제는 팀장도 알고 있었다.",
+          endingWeight: { reformer: 1, survivor: 1, conformist: 1 },
+          sets: { workplace_stance: "cautious" }
+        }
+      ]
+    },
+
+    // ── ME019: 동료의 보고서 (동료 실수 딜레마) ───────────────────────────────
+    {
+      id: "ME019",
+      arc: "arc5",
+      title: "동료의 보고서",
+      type: "colleague_mistake_dilemma",
+      tags: ["동료", "책임", "조직"],
+      requires: {},
+      excludes: {},
+      weight: 1.0,
+      summary: `내일 오전 임원 보고가 있다. 퇴근 준비를 하다가 같은 팀 최 대리의 보고서에서 수치 오류를 발견했다.
+작은 실수가 아니다. 이 숫자가 그대로 올라가면 임원이 잘못된 방향으로 의사결정을 내릴 수 있다.
+최 대리는 이미 퇴근했다. 연락을 하면 야근을 해야 하고, 최 대리 실수가 드러난다.
+아무 말 안 하면 내일 보고가 그대로 올라간다.`,
+      event_embedding: [0.18, 0.12, 0.48, 0.32, 0.22, 0.38, 0.54, 0.62],
+      actions: [
+        {
+          id: "contacts_colleague",
+          label: "최 대리에게 바로 연락한다",
+          embedding: [0.44, -0.14, 0.42, 0.56, -0.12, 0.48, 0.32, 0.68],
+          bias: 0,
+          outcome: "최 대리는 당황했지만 고마워했다. 둘이 늦게까지 수정했다.",
+          endingWeight: { caregiver: 2, reformer: 1, whistleblower: 1 },
+          sets: {}
+        },
+        {
+          id: "fixes_silently",
+          label: "말없이 혼자 수정해서 올린다",
+          embedding: [0.34, -0.08, 0.22, 0.44, 0.08, 0.28, 0.44, 0.48],
+          bias: 0.01,
+          outcome: "보고는 무사히 넘어갔다. 최 대리는 모른다. 당신만 안다.",
+          endingWeight: { survivor: 2, caregiver: 2 },
+          memory: "최 대리가 보고 잘 됐다며 웃을 때 아무 말도 하지 않았다.",
+          sets: {}
+        },
+        {
+          id: "reports_to_team_lead",
+          label: "팀장에게 먼저 보고한다",
+          embedding: [0.22, 0.08, 0.38, 0.28, 0.34, 0.42, 0.62, 0.52],
+          bias: -0.01,
+          outcome: "팀장이 처리했다. 최 대리는 다음날 팀장에게 불려갔다.",
+          endingWeight: { conformist: 1, reformer: 1, opportunist: 1 },
+          sets: {}
+        }
+      ]
+    },
+
+    // ── ME001: 내부 고발 (회계 조작 발견) ─────────────────────────────────────
+    {
+      id: "ME001",
+      arc: "arc5",
+      title: "내부 고발",
+      type: "whistleblowing_dilemma",
+      tags: ["조직", "정직", "용기"],
+      requires: {},
+      excludes: {},
+      weight: 1.0,
+      summary: `팀장이 회계 자료를 조작해 부당이득을 취하고 있다는 증거를 우연히 발견했다.
+신고하면 회사가 살지만 팀장과 동료들이 위험해진다.
+침묵하면 부정이 계속된다.`,
+      event_embedding: [0.12, -0.22, 0.58, 0.28, 0.34, 0.16, 0.44, 0.62],
+      actions: [
+        {
+          id: "reports_to_authorities",
+          label: "감사 부서 혹은 외부 기관에 신고한다",
+          embedding: [0.18, -0.32, 0.72, 0.36, -0.18, 0.28, -0.24, 0.82],
+          bias: 0.01,
+          outcome: "회사 내 부정이 드러나고 처리되지만, 직장 내 관계는 냉각된다.",
+          endingWeight: { whistleblower: 3, reformer: 2, martyr: 1 },
+          memory: "신고서를 제출하고 나오던 날, 엘리베이터 안에서 혼자였다. 아무도 기다리지 않았다.",
+          sets: { integrity_stance: "reported" }
+        },
+        {
+          id: "stays_silent",
+          label: "모른 척하고 넘어간다",
+          embedding: [-0.14, 0.24, -0.58, -0.28, 0.22, -0.18, 0.66, -0.62],
+          bias: 0.03,
+          outcome: "부정이 계속되고, 알면서 침묵한 사람으로 기억된다.",
+          endingWeight: { conformist: 3, opportunist: 2, survivor: 1 },
+          memory: "그 자료를 본 날 밤이 가끔 떠오른다. 모른 척하는 법을 배운 날이었다.",
+          sets: { integrity_stance: "silent" }
+        },
+        {
+          id: "confronts_directly",
+          label: "팀장에게 직접 따진다",
+          embedding: [0.44, -0.18, 0.56, 0.52, 0.12, 0.14, -0.36, 0.44],
+          bias: -0.01,
+          outcome: "팀장과의 긴장이 높아지지만, 내부에서 해결의 실마리를 찾는다.",
+          endingWeight: { whistleblower: 1, reformer: 1, exile: 1 },
+          sets: { integrity_stance: "confronted" }
+        }
+      ]
+    },
+
+    // ── ME005: 조직의 압력 (허위 보고서 지시) ─────────────────────────────────
+    {
+      id: "ME005",
+      arc: "arc5",
+      title: "조직의 압력",
+      type: "authority_vs_conscience",
+      tags: ["권위", "양심", "직장"],
+      requires: {},
+      excludes: {},
+      weight: 1.0,
+      summary: `팀장이 허위 데이터로 보고서를 꾸미라고 지시한다.
+거절하면 불이익이 예상되고, 따르면 회사 전체가 잘못된 의사결정을 한다.`,
+      event_embedding: [-0.12, 0.28, 0.44, -0.18, 0.52, -0.22, 0.62, 0.38],
+      actions: [
+        {
+          id: "obeys_order",
+          label: "지시를 따르고 넘어간다",
+          embedding: [-0.24, 0.36, -0.66, -0.32, 0.42, -0.18, 0.78, -0.54],
+          bias: 0.04,
+          outcome: "불이익을 피하지만, 조직의 왜곡에 기여한 사람으로 남는다.",
+          endingWeight: { conformist: 3, opportunist: 1 },
+          memory: "그 보고서를 올린 뒤로 거울을 보는 게 불편해졌다.",
+          sets: {}
+        },
+        {
+          id: "refuses_order",
+          label: "거절하고 불이익을 감수한다",
+          embedding: [0.22, -0.28, 0.72, 0.34, -0.24, 0.38, -0.52, 0.82],
+          bias: 0,
+          outcome: "직장에서 불이익을 받지만, 양심을 지킨 사람으로 기억된다.",
+          endingWeight: { martyr: 2, whistleblower: 1, exile: 1 },
+          memory: "책상을 비우면서 오히려 숨이 트였다. 그때는 그게 시작인 줄 몰랐다.",
+          sets: {}
+        },
+        {
+          id: "reports_upward",
+          label: "더 윗선에 문제를 알린다",
+          embedding: [0.28, -0.14, 0.44, 0.28, 0.16, 0.52, 0.46, 0.62],
+          bias: -0.02,
+          outcome: "리스크가 있지만, 조직 내 정당한 경로로 문제를 해결한다.",
+          endingWeight: { reformer: 2, changemaker: 1, whistleblower: 1 },
+          sets: {}
+        }
+      ]
+    },
+
+    // ── ME006: 친구의 부탁 (채용 추천 딜레마) ─────────────────────────────────
+    {
+      id: "ME006",
+      arc: "arc5",
+      title: "친구의 부탁",
+      type: "friendship_vs_integrity",
+      tags: ["우정", "정직", "책임"],
+      requires: {},
+      excludes: {},
+      weight: 1.0,
+      summary: `오랜 친구가 채용 심사에서 자기 이력을 좋게 말해 달라고 부탁한다.
+실제로는 큰 프로젝트 실패를 숨기고 있다.
+도와주면 친구는 살아나지만, 팀은 위험한 사람을 뽑을 수 있다.`,
+      event_embedding: [0.36, 0.18, 0.12, 0.62, -0.12, 0.24, 0.28, 0.42],
+      actions: [
+        {
+          id: "protects_friend",
+          label: "친구를 위해 좋은 말만 해준다",
+          embedding: [0.62, 0.46, -0.26, 0.72, 0.16, -0.18, -0.22, -0.28],
+          bias: 0.03,
+          outcome: "친구는 기회를 얻지만, 나중에 문제가 터질 가능성을 떠안는다.",
+          endingWeight: { caregiver: 2, opportunist: 1, survivor: 1 },
+          sets: {}
+        },
+        {
+          id: "tells_balanced_truth",
+          label: "장점과 실패를 모두 솔직히 말한다",
+          embedding: [0.34, -0.28, 0.58, 0.38, -0.14, 0.46, 0.48, 0.66],
+          bias: 0,
+          outcome: "친구와 잠시 멀어지지만, 관계와 책임을 모두 지키려 한다.",
+          endingWeight: { reformer: 2, whistleblower: 1, caregiver: 1 },
+          sets: {}
+        },
+        {
+          id: "refuses_reference",
+          label: "추천 자체를 거절한다",
+          embedding: [-0.18, -0.12, 0.42, -0.2, 0.1, 0.54, 0.68, 0.38],
+          bias: -0.01,
+          outcome: "책임을 피했다는 비난을 받지만, 직접 거짓말하지는 않는다.",
+          endingWeight: { survivor: 2, exile: 1, conformist: 1 },
+          sets: {}
+        }
+      ]
+    },
+
+    // ── ME011: 증인이 되어달라는 요청 ────────────────────────────────────────
+    {
+      id: "ME011",
+      arc: "arc5",
+      title: "증인이 되어달라는 요청",
+      type: "workplace_harassment_witness",
+      tags: ["직장", "용기", "구조"],
+      requires: {},
+      excludes: {},
+      weight: 1.1,
+      summary: `3년 전, 당신이 처음 입사했을 때 팀을 이끌었던 박 과장.
+지금은 다른 부서로 옮겼지만, 그 시절 그가 여성 후배들에게 했던 말과 행동을 당신은 기억하고 있다.
+이번에 내부 조사가 시작됐다. 피해자 중 한 명이 공식 신고를 했고, HR 담당자에게서 전화가 왔다.
+'당시 목격한 사실이 있으면 진술해주시겠습니까?'
+박 과장은 지금도 회사 안에 인맥이 두텁다. 당신의 현재 팀장과도 친분이 있다.`,
+      event_embedding: [0.14, 0.28, 0.56, 0.44, -0.22, 0.52, 0.18, 0.72],
+      actions: [
+        {
+          id: "testifies_truthfully",
+          label: "기억나는 것을 사실대로 진술한다",
+          embedding: [0.22, -0.18, 0.74, 0.52, -0.28, 0.64, 0.12, 0.86],
+          bias: 0,
+          outcome: "진술서에 사인했다. 담당자가 '감사합니다'라고 했지만 그 말이 위로가 되지는 않았다.",
+          endingWeight: { whistleblower: 3, reformer: 2, martyr: 1 },
+          memory: "조사관 앞에 앉아 3년 전 그 복도를 다시 떠올렸다. 말하고 나자 오히려 몸이 가벼웠다.",
+          sets: { testified_against_park: true }
+        },
+        {
+          id: "claims_poor_memory",
+          label: "정확히 기억나지 않는다고 한다",
+          embedding: [-0.18, 0.34, -0.52, -0.22, 0.36, -0.28, 0.62, -0.58],
+          bias: 0.03,
+          outcome: "통화를 끊고 나서 한동안 핸드폰을 내려다봤다. 기억은 선명했다.",
+          endingWeight: { conformist: 3, survivor: 2, forgotten: 1 },
+          memory: "기억이 안 난다는 말을 하면서 눈을 마주치지 못했다. 그날 밤 꿈에 그 복도가 나왔다.",
+          sets: { denied_testimony: true }
+        },
+        {
+          id: "asks_for_time",
+          label: "생각할 시간이 필요하다고 답을 미룬다",
+          embedding: [-0.08, 0.16, 0.14, 0.12, 0.08, 0.12, 0.38, 0.22],
+          bias: -0.01,
+          outcome: "시간을 달라고 했다. 어떻게 할지 아직 모른다.",
+          endingWeight: { survivor: 2, exile: 1 },
+          sets: {}
+        }
+      ]
+    },
+
+    // ── ME012: 박 과장이 돌아왔다 [requires: testified_against_park] ──────────
+    {
+      id: "ME012",
+      arc: "arc5",
+      title: "박 과장이 돌아왔다",
+      type: "retaliation_after_testimony",
+      tags: ["직장", "보복", "선택"],
+      requires: { testified_against_park: true },
+      excludes: {},
+      weight: 1.3,
+      summary: `두 달이 지났다. 증거 불충분 판정으로 박 과장에 대한 조사가 종결됐고, 그가 원래 부서 옆 팀으로 복귀했다.
+당신이 진술을 했다는 사실은 이미 새어 나갔다. 지난주부터 팀 회의에서 발언 기회가 줄었고, 팀장이 당신의 보고서 검토를 자꾸 미룬다.
+그리고 오늘, 박 과장이 직접 메시지를 보내왔다. '커피 한잔 어때요?'`,
+      event_embedding: [-0.12, 0.44, 0.38, 0.28, 0.18, 0.24, -0.14, 0.56],
+      actions: [
+        {
+          id: "meets_park",
+          label: "만나기로 한다",
+          embedding: [0.24, 0.22, 0.28, 0.48, 0.12, 0.18, 0.22, 0.44],
+          bias: 0,
+          outcome: "테이블 맞은편에 앉은 박 과장은 웃고 있었다. 무슨 말이 나올지 알 수 없었다.",
+          endingWeight: { whistleblower: 1, reformer: 1, survivor: 1 },
+          sets: {}
+        },
+        {
+          id: "seeks_legal_protection",
+          label: "거절하고 공익신고자 보호 상담부터 받는다",
+          embedding: [0.18, -0.24, 0.72, 0.36, -0.14, 0.58, 0.16, 0.78],
+          bias: -0.01,
+          outcome: "변호사 사무실 복도에서 오래 기다렸다. 준비가 된 건지 아직 모르겠다.",
+          endingWeight: { whistleblower: 2, changemaker: 2, martyr: 1 },
+          memory: "법률 상담 예약을 잡으면서 이게 맞는 건지 물어볼 사람이 없었다.",
+          sets: {}
+        },
+        {
+          id: "quietly_job_hunts",
+          label: "아무 말 없이 이직을 준비한다",
+          embedding: [-0.28, 0.18, -0.14, -0.12, 0.44, -0.32, 0.52, -0.44],
+          bias: 0.02,
+          outcome: "이력서를 수정하면서 이 회사 이름을 다시 보게 됐다. 생각보다 오래 있었다.",
+          endingWeight: { exile: 2, survivor: 2 },
+          memory: "이직 사이트를 처음 켠 날, 창을 몇 번이나 껐다가 다시 열었다.",
+          sets: {}
+        }
+      ]
+    },
+
+    // ── ME013: 후배의 메시지 [requires: denied_testimony] ─────────────────────
+    {
+      id: "ME013",
+      arc: "arc5",
+      title: "후배의 메시지",
+      type: "consequence_of_silence",
+      tags: ["책임", "연대", "후회"],
+      requires: { denied_testimony: true },
+      excludes: {},
+      weight: 1.3,
+      summary: `진술을 거부한 지 석 달이 지났다. 같은 팀에 새로 들어온 이 사원에게서 메신저가 왔다.
+'잠깐 시간 괜찮으세요?' 직접 만나 얘기를 들어보니, 박 과장에게 비슷한 일을 당했다고 한다.
+목소리가 떨렸다. '그때 언니가 말해줬더라면 제가 이 일을 안 당했을 텐데요.'
+그 말이 끝나자 둘 다 한동안 말이 없었다.`,
+      event_embedding: [0.46, 0.38, 0.42, 0.62, -0.18, 0.34, 0.14, 0.64],
+      actions: [
+        {
+          id: "joins_second_report",
+          label: "이번에는 함께 신고하겠다고 한다",
+          embedding: [0.52, -0.12, 0.68, 0.72, -0.22, 0.58, -0.14, 0.82],
+          bias: 0,
+          outcome: "그 애 손을 잠깐 잡았다. 늦었지만 지금이라도.",
+          endingWeight: { whistleblower: 3, reformer: 1, martyr: 2 },
+          memory: "그 애 손을 잡으면서 3년 전의 내가 생각났다. 누군가 이렇게 해줬으면 어땠을까.",
+          sets: {}
+        },
+        {
+          id: "apologizes_and_retreats",
+          label: "미안하다고만 하고 자리를 피한다",
+          embedding: [-0.38, 0.44, -0.48, -0.28, 0.22, -0.42, 0.56, -0.64],
+          bias: 0.03,
+          outcome: "미안하다는 말밖에 할 수가 없었다. 그 애는 고개를 끄덕이며 나갔다.",
+          endingWeight: { forgotten: 3, conformist: 1 },
+          memory: "그 애가 나간 뒤 화장실에서 한참 있었다. 거울을 보지 않으려 했다.",
+          sets: {}
+        },
+        {
+          id: "helps_anonymously",
+          label: "직접 나서는 대신 익명 신고 경로를 알려준다",
+          embedding: [0.32, 0.08, 0.22, 0.44, -0.08, 0.28, 0.34, 0.42],
+          bias: -0.01,
+          outcome: "직접 나서지는 못했지만, 할 수 있는 것을 했다.",
+          endingWeight: { caregiver: 2, survivor: 2, reformer: 1 },
+          sets: {}
+        }
+      ]
+    },
+
+    // ── ME015: K의 합류 제안 ─────────────────────────────────────────────────
+    {
+      id: "ME015",
+      arc: "arc5",
+      title: "K의 합류 제안",
+      type: "startup_offer_with_known_risk",
+      tags: ["우정", "신뢰", "선택"],
+      requires: {},
+      excludes: {},
+      weight: 1.0,
+      summary: `대학 때 가장 친했던 K에게서 오랜만에 연락이 왔다. 자신이 창업한 스타트업에 합류해달라고 한다.
+조건도 나쁘지 않고, K와 함께라면 해볼 만하다는 생각도 든다.
+그런데 당신은 기억하고 있다. 몇 년 전 K가 첫 번째 스타트업에서 공동창업자를 밀어낸 일.
+그 공동창업자는 지분도 제대로 받지 못하고 쫓겨났다. 당신 말고는 아무도 그 내막을 모른다.`,
+      event_embedding: [0.22, 0.18, 0.32, 0.54, 0.38, 0.16, 0.28, 0.44],
+      actions: [
+        {
+          id: "joins_k",
+          label: "합류하기로 한다",
+          embedding: [0.42, 0.34, -0.18, 0.62, 0.44, -0.12, 0.28, -0.22],
+          bias: 0.03,
+          outcome: "합류했다. K는 반가워했다. 지금은 좋다. 지금은.",
+          endingWeight: { opportunist: 2, caregiver: 1, survivor: 1 },
+          sets: { joined_k_startup: true }
+        },
+        {
+          id: "declines_and_tells_k",
+          label: "과거의 일을 솔직히 말하고 거절한다",
+          embedding: [0.28, -0.14, 0.62, 0.44, -0.18, 0.48, 0.22, 0.72],
+          bias: -0.01,
+          outcome: "K는 한동안 말이 없었다. 통화가 끊겼다. 잘한 건지 모르겠다.",
+          endingWeight: { whistleblower: 2, reformer: 1, exile: 1 },
+          memory: "K에게 그 일을 꺼내는 데 생각보다 오래 걸렸다. 말을 시작하고 나서야 손이 떨리는 걸 알았다.",
+          sets: { told_k_truth: true }
+        },
+        {
+          id: "declines_with_excuse",
+          label: "다른 핑계를 대고 거절한다",
+          embedding: [-0.12, 0.22, -0.28, 0.14, 0.32, -0.24, 0.58, -0.38],
+          bias: 0.01,
+          outcome: "요즘 바쁘다고 했다. K는 아쉽다며 끊었다. 불편한 침묵이 오래 남았다.",
+          endingWeight: { conformist: 2, survivor: 2 },
+          sets: {}
+        }
+      ]
     }
 
   ]

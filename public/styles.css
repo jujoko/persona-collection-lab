@@ -84,10 +84,17 @@ button:hover {
 }
 
 .mode-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.mode-tab-group {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  width: fit-content;
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 4px;
@@ -106,6 +113,11 @@ button:hover {
   color: #fffaf1;
   background: var(--ink);
   border-color: var(--ink);
+}
+
+.admin-mode-tab {
+  border-color: var(--line);
+  background: rgba(255, 253, 248, 0.82);
 }
 
 .view-section[hidden] {
@@ -200,7 +212,7 @@ h2 {
 }
 
 .user-grid {
-  grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
 }
 
@@ -228,8 +240,6 @@ h2 {
 .creation-panel {
   display: grid;
   gap: 14px;
-  position: sticky;
-  top: 18px;
 }
 
 label {

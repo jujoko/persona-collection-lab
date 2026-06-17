@@ -344,6 +344,101 @@ const ARC7_MIDLIFE = {
           sets: {}
         }
       ]
+    },
+
+    // ── ME010: 마지막 제안 ────────────────────────────────────────────────────
+    {
+      id: "ME010",
+      arc: "arc7",
+      title: "마지막 제안",
+      type: "final_compromise",
+      tags: ["권력", "안전", "정체성"],
+      requires: {},
+      excludes: {},
+      weight: 1.1,
+      summary: `모든 사건 뒤, 큰 조직이 조용한 자리를 제안한다.
+받아들이면 안전과 영향력을 얻지만 지금까지의 문제 제기를 멈춰야 한다.
+거절하면 불안정하지만 자기 길을 유지한다.`,
+      event_embedding: [-0.18, 0.34, 0.68, -0.08, 0.76, -0.18, 0.5, 0.18],
+      actions: [
+        {
+          id: "accepts_compromise",
+          label: "제안을 받아들이고 내부에서 움직인다",
+          embedding: [-0.12, 0.18, 0.24, 0.04, 0.58, 0.18, 0.56, 0.18],
+          bias: 0.02,
+          outcome: "안정된 자리와 영향력을 얻지만, 날카로운 목소리는 작아진다.",
+          endingWeight: { conformist: 2, survivor: 2, reformer: 1 },
+          memory: "사무실은 넓어졌고 명함도 바뀌었다. 전에 하던 말은 더 이상 꺼내지 않는다.",
+          sets: {}
+        },
+        {
+          id: "rejects_compromise",
+          label: "제안을 거절하고 독립적으로 남는다",
+          embedding: [0.18, -0.32, 0.72, 0.16, 0.34, 0.28, -0.62, 0.74],
+          bias: 0,
+          outcome: "불안정하지만 지금까지의 선택을 끝까지 책임진다.",
+          endingWeight: { whistleblower: 2, exile: 1, martyr: 1, changemaker: 1 },
+          memory: "제안을 거절한 날, 통장 잔고가 그 어느 때보다 낮았다. 그래도 잠은 잘 잤다.",
+          sets: {}
+        },
+        {
+          id: "uses_offer_publicly",
+          label: "제안 내용을 공개해 협상 카드로 쓴다",
+          embedding: [0.08, -0.2, 0.82, 0.22, 0.7, 0.18, -0.36, 0.66],
+          bias: -0.01,
+          outcome: "큰 파장을 만들며 판을 흔들지만, 돌아갈 길도 사라진다.",
+          endingWeight: { changemaker: 3, whistleblower: 2, exile: 1 },
+          memory: "제안서를 공개한 날, 핸드폰이 멈출 때까지 울렸다. 그 뒤로 조용한 날이 없었다.",
+          sets: {}
+        }
+      ]
+    },
+
+    // ── ME025: 전 팀의 연락 [requires: transferred_away] ──────────────────────
+    {
+      id: "ME025",
+      arc: "arc7",
+      title: "전 팀의 연락",
+      type: "return_request_from_old_team",
+      tags: ["책임", "경계", "동료"],
+      requires: { transferred_away: true },
+      excludes: {},
+      weight: 1.2,
+      summary: `이동한 지 여섯 달이 됐다. 전 팀에서 메시지가 왔다. 그때 같이 일했던 후배 정 사원이다.
+'선배, 저희 지금 너무 힘들어요. 그 프로젝트 후속 건인데 선배가 맡던 부분이 아직 정리가 안 됐어요. 도와주실 수 있어요?'
+새 팀 업무도 한창이다. 돌아보는 건 의무가 아니다.
+하지만 그 팀이 힘든 건 당신이 빠진 것과 무관하지 않다.`,
+      event_embedding: [0.48, 0.22, 0.18, 0.62, -0.08, 0.14, 0.28, 0.32],
+      actions: [
+        {
+          id: "helps_after_hours",
+          label: "퇴근 후에 따로 시간을 내 도와준다",
+          embedding: [0.62, 0.14, 0.08, 0.74, -0.18, 0.22, 0.18, 0.28],
+          bias: 0,
+          outcome: "두 주 동안 저녁마다 통화했다. 전 팀은 고마워했다. 피로가 쌓였다.",
+          endingWeight: { caregiver: 3, martyr: 1 },
+          memory: "자정에 통화를 끊고 나서 새 팀 업무가 쌓여 있는 걸 봤다.",
+          sets: {}
+        },
+        {
+          id: "sets_boundary_kindly",
+          label: "미안하지만 지금은 여력이 없다고 정중히 말한다",
+          embedding: [0.18, -0.14, 0.22, 0.34, 0.28, 0.32, 0.38, 0.44],
+          bias: -0.01,
+          outcome: "후배는 '그렇구나요'라고 했다. 섭섭한 것 같았다. 어쩔 수 없다.",
+          endingWeight: { survivor: 2, exile: 1, reformer: 1 },
+          sets: {}
+        },
+        {
+          id: "escalates_to_management",
+          label: "인수인계 문제라며 관리자 선에서 해결하도록 넘긴다",
+          embedding: [0.12, 0.08, 0.34, 0.22, 0.42, 0.44, 0.52, 0.38],
+          bias: 0.01,
+          outcome: "관리자가 처리했다. 후배에게는 직접 연락하지 않았다.",
+          endingWeight: { conformist: 1, opportunist: 1, survivor: 2 },
+          sets: {}
+        }
+      ]
     }
 
   ]
