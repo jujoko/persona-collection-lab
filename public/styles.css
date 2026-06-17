@@ -1052,13 +1052,69 @@ blockquote {
   color: rgba(255, 250, 241, 0.55) !important;
 }
 
-.ending-badge {
-  min-width: 136px;
-  text-align: center;
-  border: 1px solid rgba(255, 250, 241, 0.32);
-  border-radius: 8px;
-  padding: 12px;
-  background: rgba(255, 250, 241, 0.1);
+.ending-title-scene {
+  margin: 2px 0 10px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: rgba(255, 250, 241, 0.65);
+  letter-spacing: 0.03em;
+}
+
+.ending-scene {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: rgba(255, 250, 241, 0.9) !important;
+}
+
+.ending-screen {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ending-memories-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ending-memories-section > .eyebrow {
+  margin-bottom: 4px;
+  color: var(--text-muted);
+}
+
+.memory-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.memory-card {
+  padding: 14px 16px;
+  border-left: 3px solid #5d4c83;
+  background: rgba(93, 76, 131, 0.08);
+  border-radius: 0 6px 6px 0;
+}
+
+.memory-card p {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.memory-event-id {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5d4c83;
+}
+
+.ending-card {
+  grid-column: unset;
 }
 
 pre {

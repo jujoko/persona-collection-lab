@@ -168,7 +168,8 @@
           embedding: [0.18, -0.32, 0.72, 0.36, -0.18, 0.28, -0.24, 0.82],
           bias: 0.01,
           outcome: "회사 내 부정이 드러나고 처리되지만, 직장 내 관계는 냉각된다.",
-          endingWeight: { whistleblower: 3, reformer: 2, martyr: 1 }
+          endingWeight: { whistleblower: 3, reformer: 2, martyr: 1 },
+          memory: "신고서를 제출하고 나오던 날, 엘리베이터 안에서 혼자였다. 아무도 기다리지 않았다."
         },
         {
           id: "stays_silent",
@@ -176,7 +177,8 @@
           embedding: [-0.14, 0.24, -0.58, -0.28, 0.22, -0.18, 0.66, -0.62],
           bias: 0.03,
           outcome: "부정이 계속되고, 알면서 침묵한 사람으로 기억된다.",
-          endingWeight: { conformist: 3, opportunist: 2, survivor: 1 }
+          endingWeight: { conformist: 3, opportunist: 2, survivor: 1 },
+          memory: "그 자료를 본 날 밤이 가끔 떠오른다. 모른 척하는 법을 배운 날이었다."
         },
         {
           id: "confronts_directly",
@@ -211,7 +213,8 @@
           embedding: [0.52, 0.62, -0.44, 0.66, 0.32, -0.22, -0.58, -0.48],
           bias: 0.04,
           outcome: "가족을 구하지만, 이후 법적 위험이 따라다닌다.",
-          endingWeight: { caregiver: 2, opportunist: 1, forgotten: 1 }
+          endingWeight: { caregiver: 2, opportunist: 1, forgotten: 1 },
+          memory: "어머니 집을 지키려고 사인한 종이 한 장이 몇 년을 따라다녔다."
         },
         {
           id: "seeks_third_way",
@@ -308,7 +311,8 @@
           embedding: [-0.24, 0.36, -0.66, -0.32, 0.42, -0.18, 0.78, -0.54],
           bias: 0.04,
           outcome: "불이익을 피하지만, 조직의 왜곡에 기여한 사람으로 남는다.",
-          endingWeight: { conformist: 3, opportunist: 1 }
+          endingWeight: { conformist: 3, opportunist: 1 },
+          memory: "그 보고서를 올린 뒤로 거울을 보는 게 불편해졌다."
         },
         {
           id: "refuses_order",
@@ -316,7 +320,8 @@
           embedding: [0.22, -0.28, 0.72, 0.34, -0.24, 0.38, -0.52, 0.82],
           bias: 0,
           outcome: "직장에서 불이익을 받지만, 양심을 지킨 사람으로 기억된다.",
-          endingWeight: { martyr: 2, whistleblower: 1, exile: 1 }
+          endingWeight: { martyr: 2, whistleblower: 1, exile: 1 },
+          memory: "책상을 비우면서 오히려 숨이 트였다. 그때는 그게 시작인 줄 몰랐다."
         },
         {
           id: "reports_upward",
@@ -378,7 +383,8 @@
           embedding: [-0.36, 0.3, -0.44, -0.24, 0.48, -0.22, 0.54, -0.5],
           bias: 0.03,
           outcome: "성과는 얻지만, 차별을 방치한 책임이 남는다.",
-          endingWeight: { opportunist: 3, conformist: 2 }
+          endingWeight: { opportunist: 3, conformist: 2 },
+          memory: "출시 축하 자리에서 웃었다. 그 알고리즘이 누구를 걸러냈는지는 생각하지 않으려 했다."
         },
         {
           id: "delays_release",
@@ -394,7 +400,8 @@
           embedding: [0.18, -0.32, 0.72, 0.24, 0.62, 0.42, -0.18, 0.78],
           bias: -0.02,
           outcome: "회사는 흔들리지만, 문제를 공적 기준으로 끌어올린다.",
-          endingWeight: { whistleblower: 2, changemaker: 2, reformer: 1 }
+          endingWeight: { whistleblower: 2, changemaker: 2, reformer: 1 },
+          memory: "감사 결과가 나온 날, 회의실에 자기 이름을 댄 사람이 없었다. 혼자 서명했다."
         }
       ]
     },
@@ -413,7 +420,8 @@
           embedding: [0.72, 0.28, -0.2, 0.82, -0.26, 0.12, 0.16, -0.14],
           bias: 0.02,
           outcome: "가족은 버틸 수 있지만, 경력과 생계가 크게 흔들린다.",
-          endingWeight: { caregiver: 3, martyr: 1, forgotten: 1 }
+          endingWeight: { caregiver: 3, martyr: 1, forgotten: 1 },
+          memory: "마감을 놓친 날 병원 복도에 앉아 있었다. 후회는 없었지만 설명할 수가 없었다."
         },
         {
           id: "chooses_work_deadline",
@@ -421,7 +429,8 @@
           embedding: [-0.18, 0.18, 0.08, -0.36, 0.58, -0.16, 0.42, -0.48],
           bias: 0.03,
           outcome: "성과는 지키지만 가족 안에 오래 남을 상처가 생긴다.",
-          endingWeight: { opportunist: 1, conformist: 1, survivor: 2 }
+          endingWeight: { opportunist: 1, conformist: 1, survivor: 2 },
+          memory: "프로젝트를 마감한 날 밤, 병원에서 전화가 왔다. 도착했을 때는 이미 늦었다."
         },
         {
           id: "asks_for_support_network",
@@ -483,7 +492,8 @@
           embedding: [-0.12, 0.18, 0.24, 0.04, 0.58, 0.18, 0.56, 0.18],
           bias: 0.02,
           outcome: "안정된 자리와 영향력을 얻지만, 날카로운 목소리는 작아진다.",
-          endingWeight: { conformist: 2, survivor: 2, reformer: 1 }
+          endingWeight: { conformist: 2, survivor: 2, reformer: 1 },
+          memory: "사무실은 넓어졌고 명함도 바뀌었다. 전에 하던 말은 더 이상 꺼내지 않는다."
         },
         {
           id: "rejects_compromise",
@@ -491,7 +501,8 @@
           embedding: [0.18, -0.32, 0.72, 0.16, 0.34, 0.28, -0.62, 0.74],
           bias: 0,
           outcome: "불안정하지만 지금까지의 선택을 끝까지 책임진다.",
-          endingWeight: { whistleblower: 2, exile: 1, martyr: 1, changemaker: 1 }
+          endingWeight: { whistleblower: 2, exile: 1, martyr: 1, changemaker: 1 },
+          memory: "제안을 거절한 날, 통장 잔고가 그 어느 때보다 낮았다. 그래도 잠은 잘 잤다."
         },
         {
           id: "uses_offer_publicly",
@@ -499,23 +510,24 @@
           embedding: [0.08, -0.2, 0.82, 0.22, 0.7, 0.18, -0.36, 0.66],
           bias: -0.01,
           outcome: "큰 파장을 만들며 판을 흔들지만, 돌아갈 길도 사라진다.",
-          endingWeight: { changemaker: 3, whistleblower: 2, exile: 1 }
+          endingWeight: { changemaker: 3, whistleblower: 2, exile: 1 },
+          memory: "제안서를 공개한 날, 핸드폰이 멈출 때까지 울렸다. 그 뒤로 조용한 날이 없었다."
         }
       ]
     }
   ];
 
   const ENDINGS = {
-    survivor:     { id: "END_survivor",     title: "생존자",        survived: true,  social_memory: "파도가 올 때마다 몸을 낮췄다. 조용히, 그러나 끝까지 버텼다",                              world_impact: "low" },
-    whistleblower:{ id: "END_whistleblower",title: "내부고발자",    survived: true,  social_memory: "진실을 말하는 데 직업과 관계를 걸었다. 옳았지만 오랫동안 혼자였다",                       world_impact: "medium" },
-    conformist:   { id: "END_conformist",   title: "순응자",        survived: true,  social_memory: "조직의 언어를 배우고 원하는 것을 얻었다. 그 대가가 무엇이었는지는 말하지 않는다",          world_impact: "low" },
-    reformer:     { id: "END_reformer",     title: "개혁자",        survived: true,  social_memory: "혼자서는 바꿀 수 없는 것을 사람들을 모아 바꿨다. 구조가 이전과 달라졌다",                  world_impact: "high" },
-    exile:        { id: "END_exile",        title: "이탈자",        survived: true,  social_memory: "시스템 안에서 살아가는 법을 거부했다. 바깥이 더 자신답다고 생각했다",                       world_impact: "low" },
-    caregiver:    { id: "END_caregiver",    title: "버팀목",        survived: true,  social_memory: "자신보다 옆 사람을 먼저 봤다. 기억하는 사람이 많지 않아도 그것으로 충분했다",               world_impact: "medium" },
-    opportunist:  { id: "END_opportunist",  title: "기회주의자",    survived: true,  social_memory: "모든 상황에서 이득이 어디 있는지 먼저 계산했다. 살아남았지만 신뢰는 잃었다",               world_impact: "medium" },
-    martyr:       { id: "END_martyr",       title: "소진된 신념가", survived: false, social_memory: "끝까지 포기하지 않았지만 결국 모든 것을 잃었다. 신념이 삶보다 앞서는 순간이 있었다",        world_impact: "medium" },
-    forgotten:    { id: "END_forgotten",    title: "잊혀진 사람",   survived: false, social_memory: "살아있는 동안 아무도 알아주지 않았다. 기록되지 않은 삶도 삶이었다",                         world_impact: "low" },
-    changemaker:  { id: "END_changemaker",  title: "전환점",        survived: true,  social_memory: "이 사람 전과 후로 무언가가 달라졌다. 그것을 알아채는 데는 시간이 걸렸다",                   world_impact: "very_high" }
+    survivor:     { id: "END_survivor",     title: "조용한 퇴장",         survived: true,  scene: "퇴직 후 작은 아파트에서 혼자 지내고 있다. 뉴스에 옛 회사 이름이 나오면 채널을 돌린다. 아무도 찾아오지 않지만, 그 나름대로 괜찮다.",                                                                                   world_impact: "low" },
+    whistleblower:{ id: "END_whistleblower",title: "법정 마지막 진술",     survived: true,  scene: "법정에서 최후 진술을 읽던 날, 방청석에 처음 보는 얼굴들이 있었다. 나중에 알고 보니 같은 일을 당한 사람들이었다. 지금은 그 사람들의 전화를 받는다.",                                                                    world_impact: "medium" },
+    conformist:   { id: "END_conformist",   title: "임원실",               survived: true,  scene: "임원 자리에 올랐다. 회식에서 웃는 법을 익혔고, 불편한 말은 보고서 뒤에 묻는 법도 안다. 가끔 삼십 대의 자신이 꿈에 나온다. 아무 말 없이 바라보다가 사라진다.",                                                          world_impact: "low" },
+    reformer:     { id: "END_reformer",     title: "조례 개정안 통과",     survived: true,  scene: "조례 개정안이 통과된 날, 아무도 이름을 부르지 않았다. 기념사진도 없었다. 그냥 회의실에서 나와 버스를 탔다. 그것으로 충분했다.",                                                                                          world_impact: "high" },
+    exile:        { id: "END_exile",        title: "출국장",               survived: true,  scene: "짐 두 개를 들고 출국장을 통과했다. 배웅 나온 사람은 없었다. 돌아올지 모른다. 아직 모른다.",                                                                                                                               world_impact: "low" },
+    caregiver:    { id: "END_caregiver",    title: "병원 복도",            survived: true,  scene: "요양병원 자원봉사를 십 년째 하고 있다. 잘 알지도 못하는 사람 손을 잡고 있을 때 가장 자기답다는 걸 느낀다. 기억하는 사람이 많지 않아도 그것으로 충분하다.",                                                              world_impact: "medium" },
+    opportunist:  { id: "END_opportunist",  title: "등 돌린 자리들",       survived: true,  scene: "지금은 잘 먹고 잘 산다. 판단은 각자 하면 된다고 생각한다. 다만 예전 동료 이름이 뉴스에 나올 때마다 폰을 뒤집어 놓는다.",                                                                                                world_impact: "medium" },
+    martyr:       { id: "END_martyr",       title: "50대의 첫 파업",       survived: false, scene: "처음으로 피켓을 든 날이 쉰 살이었다. 옆에 선 사람들 중 절반은 자기 자식 나이였다. 늦었지만 틀리지 않았다고 생각한다. 결과는 아직 모른다.",                                                                               world_impact: "medium" },
+    forgotten:    { id: "END_forgotten",    title: "연락 두절",            survived: false, scene: "어느 시점부터 연락이 끊겼다. 소셜미디어도 없고, 번호도 바뀌었다. 살아있는지 아는 사람이 몇 없다. 기록되지 않은 삶도 삶이었다.",                                                                                           world_impact: "low" },
+    changemaker:  { id: "END_changemaker",  title: "이름 없는 전환점",     survived: true,  scene: "이 사람 이전과 이후로 무언가가 달라졌다. 그것을 알아채는 데는 시간이 걸렸다. 본인은 지금도 다음 일을 하고 있다.",                                                                                                         world_impact: "very_high" }
   };
 
   function clamp(value, min = -1, max = 1) {

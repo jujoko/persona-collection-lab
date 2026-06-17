@@ -12,7 +12,7 @@ const modeTabs = document.querySelectorAll("[data-view-target]");
 const canvas = document.querySelector("#networkCanvas");
 const ctx = canvas.getContext("2d");
 
-const STORAGE_KEY = "persona-collection-lab-v3";
+const STORAGE_KEY = "persona-collection-lab-v4";
 const state = loadState();
 const DEFAULT_PROMPT = "서울 외곽의 형편이 어려운 가정에서 자랐다. 아버지는 성적과 규율에 엄격했고 어머니는 형편이 더 어려운 이웃을 자주 도왔다. 어린 시절에는 가족에게 짐이 될까 불안해했으며, 지금은 안정적인 직장을 원하지만 부당한 일을 보면 외면하지 못한다.";
 const DEFAULT_NAME_POOL = [
@@ -234,20 +234,7 @@ function renderPrimaryResultLayout(simulation, developmentCards, dynamicRuns, en
       </article>
     ` : ""}
     ${dynamicRuns}
-    ${simulation.gameplay.completed ? `
-      <article class="ending-card">
-        <div class="ending-copy">
-          ${renderAvatar(simulation, "small")}
-          <div>
-            <p class="eyebrow">Ending</p>
-            <h2>${simulation.character.generated_name}: ${ending.title}</h2>
-            <p>${ending.social_memory}</p>
-            <p class="ending-meta">${ending.survived ? "생존" : "사망"} · 사회적 파장 ${({ low: "소", medium: "중", high: "대", very_high: "매우 큼" })[ending.world_impact] ?? ending.world_impact}</p>
-          </div>
-        </div>
-        <div class="ending-badge">${ending.id}</div>
-      </article>
-    ` : ""}
+    ${renderEndingScreen(simulation, ending)}
   `;
 }
 
@@ -669,19 +656,7 @@ function renderSimulation(simulation) {
       </article>
     ` : ""}
     ${dynamicRuns}
-    ${simulation.gameplay.completed ? `
-      <article class="ending-card">
-        <div class="ending-copy">
-          ${renderAvatar(simulation, "small")}
-          <div>
-            <p class="eyebrow">Ending</p>
-            <h2>${simulation.character.generated_name}: ${ending.title}</h2>
-            <p>${ending.social_memory}. 세계 영향도는 ${ending.world_impact}, 생존 여부는 ${ending.survived ? "생존" : "사망"}입니다.</p>
-          </div>
-        </div>
-        <div class="ending-badge">${ending.id}</div>
-      </article>
-    ` : ""}
+    ${renderEndingScreen(simulation, ending)}
   `;
   resultList.innerHTML = renderPrimaryResultLayout(simulation, developmentCards, dynamicRuns, ending);
 }
@@ -1287,22 +1262,53 @@ renderPrimaryResultLayout = function prologueFirstResultLayout(simulation, devel
       </article>
     ` : ""}
     ${dynamicRuns}
-    ${simulation.gameplay.completed ? `
+    ${renderEndingScreen(simulation, ending)}
+  `;
+};
+
+function collectMemories(simulation) {
+  return simulation.events.flatMap(event => {
+    const sourceEvent = PersonaEngine.EVENTS.find(e => e.id === event.event_id);
+    if (!sourceEvent) return [];
+    const sourceAction = sourceEvent.actions.find(a => a.id === event.action);
+    if (!sourceAction?.memory) return [];
+    return [{ eventId: event.event_id, title: event.event_title, memory: sourceAction.memory }];
+  });
+}
+
+function renderEndingScreen(simulation, ending) {
+  if (!simulation.gameplay.completed) return "";
+  const memories = collectMemories(simulation);
+  const impactLabel = { low: "소", medium: "중", high: "대", very_high: "매우 큼" }[ending.world_impact] ?? ending.world_impact;
+  const memoryCards = memories.map(m => `
+    <div class="memory-card">
+      <span class="memory-event-id">${m.title}</span>
+      <p>${m.memory}</p>
+    </div>
+  `).join("");
+  return `
+    <div class="ending-screen">
+      <div class="ending-memories-section">
+        ${memories.length > 0 ? `
+          <p class="eyebrow">이 삶의 기억들</p>
+          <div class="memory-cards">${memoryCards}</div>
+        ` : ""}
+      </div>
       <article class="ending-card">
         <div class="ending-copy">
           ${renderAvatar(simulation, "small")}
           <div>
-            <p class="eyebrow">Ending</p>
-            <h2>${simulation.character.generated_name}: ${ending.title}</h2>
-            <p>${ending.social_memory}</p>
-            <p class="ending-meta">${ending.survived ? "생존" : "사망"} · 사회적 파장 ${({ low: "소", medium: "중", high: "대", very_high: "매우 큼" })[ending.world_impact] ?? ending.world_impact}</p>
+            <p class="eyebrow">Ending · ${ending.id}</p>
+            <h2>${simulation.character.generated_name}</h2>
+            <h3 class="ending-title-scene">${ending.title}</h3>
+            <p class="ending-scene">${ending.scene}</p>
+            <p class="ending-meta">${ending.survived ? "생존" : "사망"} · 사회적 파장 ${impactLabel}</p>
           </div>
         </div>
-        <div class="ending-badge">${ending.id}</div>
       </article>
-    ` : ""}
+    </div>
   `;
-};
+}
 
 function renderDynamicRun(simulation, run) {
   const originalById = Object.fromEntries(simulation.baseline_events.map(event => [event.event_id, event]));

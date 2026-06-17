@@ -60,6 +60,19 @@ function commonHeaders(contentType) {
   };
 }
 
+function staticCacheHeaders(requestedPath) {
+  const ext = extname(requestedPath);
+  if (ext === ".html" || ext === ".js" || ext === ".css") {
+    return {
+      "Cache-Control": "no-store, max-age=0",
+      "Pragma": "no-cache"
+    };
+  }
+  return {
+    "Cache-Control": "public, max-age=3600"
+  };
+}
+
 function sendJson(response, status, payload, extraHeaders = {}) {
   response.writeHead(status, {
     ...commonHeaders("application/json; charset=utf-8"),
@@ -235,6 +248,7 @@ async function serveStatic(request, response) {
     };
     response.writeHead(200, {
       ...commonHeaders(mimeTypes[extname(requested)] || "application/octet-stream"),
+      ...staticCacheHeaders(requested),
       "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://localhost:8787; img-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
     });
     response.end(content);
