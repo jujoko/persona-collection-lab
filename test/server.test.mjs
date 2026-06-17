@@ -61,6 +61,10 @@ try {
   assert.equal(health.supabase_configured, true);
   assert.equal(health.supabase_privileged, true);
 
+  const contentScript = await fetch(`http://127.0.0.1:${appPort}/content/allArcs.js`);
+  assert.equal(contentScript.status, 200);
+  assert.match(await contentScript.text(), /STORY_ARCS/);
+
   const unauthorized = await fetch(`http://127.0.0.1:${appPort}/api/export`);
   assert.equal(unauthorized.status, 401);
   assert.equal((await unauthorized.json()).error, "unauthorized");

@@ -1,4 +1,5 @@
 const form = document.querySelector("#characterForm");
+const creationPanel = form;
 const submitBtn = document.querySelector("#submitBtn");
 const resultList = document.querySelector("#resultList");
 const emptyState = document.querySelector("#emptyState");
@@ -368,7 +369,7 @@ function createBirthPrologue(character, promptInterpretation = {}) {
   ].filter(Boolean);
 
   return {
-    title: `${name}의 프롤로그`,
+    title: `${name}의 출생 배경`,
     subtitle: "태어난 환경과 우연히 주어진 조건",
     variables: { wealth, parentStyle, homeMood, luck, misfortune },
     latent_bias: bias,
@@ -564,6 +565,7 @@ async function runSimulationWithM2(character, neuralModel) {
 
 function renderSimulation(simulation) {
   emptyState.style.display = "none";
+  if (creationPanel) creationPanel.hidden = true;
   ensureGameplayState(simulation);
   activeCharacterBadge.textContent = simulation.character.generated_name;
   renderLatentBars(simulation.latent_persona, simulation.persona_structure_prior.latent_dimensions);
@@ -1266,6 +1268,129 @@ renderPrimaryResultLayout = function prologueFirstResultLayout(simulation, devel
   `;
 };
 
+renderBirthProloguePanel = function renderBirthBackgroundPanel(simulation) {
+  const prologue = simulation.birth_prologue;
+  if (!prologue) return "";
+  const variableChips = [
+    prologue.variables.wealth.label,
+    prologue.variables.parentStyle.label,
+    prologue.variables.homeMood.label,
+    prologue.variables.luck.label,
+    prologue.variables.misfortune.label
+  ];
+  return `
+    <article class="prologue-card">
+      <div class="prologue-head">
+        <div>
+          <p class="eyebrow">Birth Background · 이번 삶의 시작 조건</p>
+          <h3>${prologue.title}</h3>
+          <p>${prologue.subtitle}</p>
+        </div>
+        ${renderAvatar(simulation, "small")}
+      </div>
+      <div class="prologue-story">
+        ${prologue.paragraphs.map(text => `<p>${text}</p>`).join("")}
+      </div>
+      <div class="prologue-chips">
+        ${variableChips.map(label => `<span>${label}</span>`).join("")}
+      </div>
+      <button type="button" class="primary-action" data-start-events-for="${simulation.character_id}">
+        출생 배경을 읽고 첫 사건 보기
+      </button>
+    </article>
+  `;
+};
+
+renderRevealedEvents = function renderEventHistoryDrawer(simulation) {
+  const revealed = simulation.events.slice(0, simulation.gameplay.currentIndex);
+  if (revealed.length === 0) return "";
+  const historyCards = revealed.map(event => {
+    const prediction = predictionFor(simulation, event.event_id);
+    return `
+      <article class="result-card revealed-event-card" data-event-id="${event.event_id}">
+        <div class="card-title-row">
+          <div class="result-meta">
+            <span>${event.chapter || "World Event"}</span>
+            <span>${event.event_id}</span>
+            <span>${prediction?.correct ? "예측 성공" : "예측 실패"}</span>
+          </div>
+          <strong>${event.event_title}</strong>
+        </div>
+        <div class="event-flow compact-event-flow">
+          <section>
+            <span class="flow-label">사건</span>
+            <p>${event.event_summary}</p>
+          </section>
+          <section>
+            <span class="flow-label">캐릭터의 실제 선택</span>
+            <p><b>${event.action_label}</b></p>
+            <p class="route-probability">이번에 열린 경로: ${rarityLabel(event.route_rarity)}</p>
+            <p>${event.outcome}</p>
+          </section>
+        </div>
+        <div class="feedback-row">
+          <button type="button" data-feedback="consistent" data-character-id="${simulation.character_id}" data-event-id="${event.event_id}">완전 캐릭터답다</button>
+          <button type="button" data-feedback="ambiguous" data-character-id="${simulation.character_id}" data-event-id="${event.event_id}">조금 애매함</button>
+          <button type="button" data-feedback="wrong" data-character-id="${simulation.character_id}" data-event-id="${event.event_id}">전혀 아님</button>
+        </div>
+      </article>
+    `;
+  }).reverse().join("");
+
+  return `
+    <details class="event-history-drawer">
+      <summary>
+        <span>
+          <b>선택했던 사건 히스토리</b>
+          <small>이미 지나간 사건과 캐릭터의 실제 선택을 다시 봅니다.</small>
+        </span>
+        <span class="history-count">${revealed.length}개</span>
+      </summary>
+      <div class="drawer-content event-history-list">
+        ${historyCards}
+      </div>
+    </details>
+  `;
+};
+
+renderPrimaryResultLayout = function birthBackgroundFirstResultLayout(simulation, developmentCards, dynamicRuns, ending) {
+  const showBirthBackground = simulation.birth_prologue && !simulation.gameplay.prologue_seen;
+  return `
+    ${showBirthBackground ? `
+      <div class="result-section-title primary-section-title">
+        <p class="eyebrow">Step 2 · Birth Background</p>
+        <h3>먼저 이 사람이 어떤 조건에서 태어났는지 읽어보세요.</h3>
+      </div>
+      ${renderBirthProloguePanel(simulation)}
+    ` : `
+      <div class="result-section-title primary-section-title">
+        <p class="eyebrow">Step 3 · Current Event</p>
+        <h3>이 캐릭터가 다음 장면에서 어떤 선택을 할지 예측하세요.</h3>
+        <p class="section-help">사건은 출생 이후의 시간 흐름을 따라 열립니다. 선택지는 플레이어가 고르는 행동이 아니라, 이 사람이 실제로 할 행동을 맞히는 예측입니다.</p>
+      </div>
+      ${renderPredictionPanel(simulation)}
+    `}
+    ${renderCharacterDrawer(simulation)}
+    ${!showBirthBackground ? renderRevealedEvents(simulation) : ""}
+    ${!showBirthBackground ? renderGameSummary(simulation) : ""}
+    ${simulation.gameplay.completed ? `
+      <article class="result-card dynamic-control-card">
+        <div>
+          <div class="result-meta">
+            <span>Dynamic</span>
+            <span>Feedback Loop</span>
+          </div>
+          <strong>피드백 반영 후 다시 시뮬레이션</strong>
+        </div>
+        <p>피드백으로 바뀐 현재 잠재 구조를 사용해 같은 캐릭터의 후속 경로를 다시 실행합니다.</p>
+        <button type="button" class="primary-action" data-rerun-character-id="${simulation.character_id}">현재 페르소나로 다시 실행</button>
+      </article>
+    ` : ""}
+    ${dynamicRuns}
+    ${renderEndingScreen(simulation, ending)}
+  `;
+};
+
 function collectMemories(simulation) {
   return simulation.events.flatMap(event => {
     const sourceEvent = PersonaEngine.EVENTS.find(e => e.id === event.event_id);
@@ -1510,6 +1635,57 @@ function showView(targetId) {
   modeTabs.forEach(tab => {
     tab.classList.toggle("active", tab.dataset.viewTarget === targetId);
   });
+  if (targetId === "endingGalleryView") renderEndingGallery();
+}
+
+function renderEndingGallery() {
+  const grid = document.querySelector("#endingGalleryGrid");
+  const progressEl = document.querySelector("#galleryProgress");
+  if (!grid) return;
+
+  const allEndings = PersonaEngine.ENDINGS;
+  const achieved = new Map();
+
+  state.simulations.forEach(sim => {
+    if (!sim.gameplay?.completed || !sim.ending) return;
+    const key = Object.keys(allEndings).find(k => allEndings[k].id === sim.ending.id);
+    if (!key) return;
+    if (!achieved.has(key)) {
+      achieved.set(key, { sim, ending: sim.ending });
+    }
+  });
+
+  const total = Object.keys(allEndings).length;
+  const done = achieved.size;
+  if (progressEl) {
+    progressEl.textContent = `${done} / ${total} 달성`;
+  }
+
+  grid.innerHTML = Object.entries(allEndings).map(([key, ending]) => {
+    const hit = achieved.get(key);
+    const unlocked = !!hit;
+    return `
+      <div class="gallery-card ${unlocked ? "unlocked" : "locked"}">
+        <div class="gallery-card-inner">
+          <div class="gallery-card-header">
+            <span class="gallery-ending-id">${ending.id}</span>
+            ${unlocked ? `<span class="gallery-badge">달성</span>` : `<span class="gallery-badge locked-badge">미달성</span>`}
+          </div>
+          <h3 class="gallery-ending-title">${unlocked ? ending.title : "????"}</h3>
+          ${unlocked ? `
+            <p class="gallery-ending-scene">${ending.scene}</p>
+            <div class="gallery-ending-meta">
+              <span>${ending.survived ? "생존" : "사망"}</span>
+              <span>파장 ${{ low: "소", medium: "중", high: "대", very_high: "매우 큼" }[ending.world_impact]}</span>
+              <span>${hit.sim.character.generated_name}</span>
+            </div>
+          ` : `
+            <p class="gallery-ending-scene locked-hint">이 엔딩은 아직 달성하지 못했습니다.</p>
+          `}
+        </div>
+      </div>
+    `;
+  }).join("");
 }
 
 form.addEventListener("submit", async event => {
@@ -1675,6 +1851,7 @@ document.querySelector("#resetBtn").addEventListener("click", () => {
   state.simulations = [];
   state.feedback = [];
   resultList.innerHTML = "";
+  if (creationPanel) creationPanel.hidden = false;
   if (adminModelPanel) adminModelPanel.innerHTML = "";
   emptyState.style.display = "grid";
   activeCharacterBadge.textContent = "대기 중";

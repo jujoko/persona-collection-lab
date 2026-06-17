@@ -24,6 +24,7 @@ const API_RATE_WINDOW_MS = 60_000;
 const rateBuckets = new Map();
 
 const rootDir = fileURLToPath(new URL("../public/", import.meta.url));
+const contentDir = fileURLToPath(new URL("../content/", import.meta.url));
 const port = Number(process.env.PORT || 8787);
 const modelName = "Xenova/all-MiniLM-L6-v2";
 
@@ -232,8 +233,11 @@ async function embedText(request, response) {
 async function serveStatic(request, response) {
   const url = new URL(request.url, `http://localhost:${port}`);
   const pathname = decodeURIComponent(url.pathname === "/" ? "/index.html" : url.pathname);
-  const requested = normalize(join(rootDir, pathname));
-  if (!requested.startsWith(rootDir)) {
+  const servingContent = pathname.startsWith("/content/");
+  const baseDir = servingContent ? contentDir : rootDir;
+  const relativePath = servingContent ? pathname.replace(/^\/content\//, "") : pathname;
+  const requested = normalize(join(baseDir, relativePath));
+  if (!requested.startsWith(baseDir)) {
     response.writeHead(403);
     response.end("Forbidden");
     return;

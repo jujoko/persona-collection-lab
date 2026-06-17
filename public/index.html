@@ -23,6 +23,7 @@
 
       <nav class="mode-tabs" aria-label="화면 전환">
         <button class="mode-tab active" type="button" data-view-target="userView">플레이</button>
+        <button class="mode-tab" type="button" data-view-target="endingGalleryView">엔딩 도감</button>
         <button class="mode-tab" type="button" data-view-target="adminView">연구 로그</button>
       </nav>
 
@@ -77,7 +78,7 @@
             <div class="panel-head">
               <div>
                 <p class="eyebrow">Story Flow</p>
-                <h2>프롤로그와 현재 사건</h2>
+                <h2>출생 배경과 현재 사건</h2>
               </div>
               <div class="result-controls">
                 <button id="compareBtn" type="button">최근 캐릭터 비교</button>
@@ -89,6 +90,19 @@
             <div id="resultList" class="result-list"></div>
           </section>
         </section>
+      </section>
+
+      <section id="endingGalleryView" class="view-section" hidden>
+        <div class="gallery-shell">
+          <div class="gallery-header">
+            <div>
+              <p class="eyebrow">Ending Gallery</p>
+              <h2>엔딩 도감</h2>
+              <p id="galleryProgress" class="gallery-progress-text"></p>
+            </div>
+          </div>
+          <div id="endingGalleryGrid" class="ending-gallery-grid"></div>
+        </div>
       </section>
 
       <section id="adminView" class="view-section admin-grid" hidden>
@@ -128,18 +142,18 @@
     </section>
   </main>
 
-  <script src="../content/flags.js"></script>
-  <script src="../content/arc0_elementary.js"></script>
-  <script src="../content/arc1_middle.js"></script>
-  <script src="../content/arc2_highschool.js"></script>
-  <script src="../content/arc2_5_repeat.js"></script>
-  <script src="../content/arc3_university.js"></script>
-  <script src="../content/arc4_job_hunt.js"></script>
-  <script src="../content/arc5_early_career.js"></script>
-  <script src="../content/arc6_thirties.js"></script>
-  <script src="../content/arc7_midlife.js"></script>
-  <script src="../content/allArcs.js"></script>
-  <script src="../content/adapter.js"></script>
+  <script src="/content/flags.js"></script>
+  <script src="/content/arc0_elementary.js"></script>
+  <script src="/content/arc1_middle.js"></script>
+  <script src="/content/arc2_highschool.js"></script>
+  <script src="/content/arc2_5_repeat.js"></script>
+  <script src="/content/arc3_university.js"></script>
+  <script src="/content/arc4_job_hunt.js"></script>
+  <script src="/content/arc5_early_career.js"></script>
+  <script src="/content/arc6_thirties.js"></script>
+  <script src="/content/arc7_midlife.js"></script>
+  <script src="/content/allArcs.js"></script>
+  <script src="/content/adapter.js"></script>
   <script src="engine.js"></script>
   <script src="app.js"></script>
 </body>

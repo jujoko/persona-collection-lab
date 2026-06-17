@@ -514,6 +514,582 @@
           memory: "제안서를 공개한 날, 핸드폰이 멈출 때까지 울렸다. 그 뒤로 조용한 날이 없었다."
         }
       ]
+    },
+    {
+      id: "ME011",
+      title: "증인이 되어달라는 요청",
+      chapter: "Act 3 · 선택의 대가",
+      type: "workplace_harassment_witness",
+      summary: "3년 전, 당신이 처음 입사했을 때 팀을 이끌었던 박 과장. 지금은 다른 부서로 옮겼지만, 그 시절 그가 여성 후배들에게 했던 말과 행동을 당신은 기억하고 있다. 이번에 내부 조사가 시작됐다. 피해자 중 한 명이 공식 신고를 했고, HR 담당자에게서 전화가 왔다. '당시 목격한 사실이 있으면 진술해주시겠습니까?' 박 과장은 지금도 회사 안에 인맥이 두텁다. 당신의 현재 팀장과도 친분이 있다.",
+      tags: ["직장", "용기", "구조"],
+      event_embedding: [0.14, 0.28, 0.56, 0.44, -0.22, 0.52, 0.18, 0.72],
+      actions: [
+        {
+          id: "testifies_truthfully",
+          label: "기억나는 것을 사실대로 진술한다",
+          embedding: [0.22, -0.18, 0.74, 0.52, -0.28, 0.64, 0.12, 0.86],
+          bias: 0,
+          outcome: "진술서에 사인했다. 담당자가 '감사합니다'라고 했지만 그 말이 위로가 되지는 않았다.",
+          endingWeight: { whistleblower: 3, reformer: 2, martyr: 1 },
+          memory: "조사관 앞에 앉아 3년 전 그 복도를 다시 떠올렸다. 말하고 나자 오히려 몸이 가벼웠다.",
+          unlocks: "testified_against_park"
+        },
+        {
+          id: "claims_poor_memory",
+          label: "정확히 기억나지 않는다고 한다",
+          embedding: [-0.18, 0.34, -0.52, -0.22, 0.36, -0.28, 0.62, -0.58],
+          bias: 0.03,
+          outcome: "통화를 끊고 나서 한동안 핸드폰을 내려다봤다. 기억은 선명했다.",
+          endingWeight: { conformist: 3, survivor: 2, forgotten: 1 },
+          memory: "기억이 안 난다는 말을 하면서 눈을 마주치지 못했다. 그날 밤 꿈에 그 복도가 나왔다.",
+          unlocks: "denied_testimony"
+        },
+        {
+          id: "asks_for_time",
+          label: "생각할 시간이 필요하다고 답을 미룬다",
+          embedding: [-0.08, 0.16, 0.14, 0.12, 0.08, 0.12, 0.38, 0.22],
+          bias: -0.01,
+          outcome: "시간을 달라고 했다. 어떻게 할지 아직 모른다.",
+          endingWeight: { survivor: 2, exile: 1 }
+        }
+      ]
+    },
+    {
+      id: "ME012",
+      title: "박 과장이 돌아왔다",
+      chapter: "Act 4 · 구조",
+      type: "retaliation_after_testimony",
+      requires: "testified_against_park",
+      summary: "두 달이 지났다. 증거 불충분 판정으로 박 과장에 대한 조사가 종결됐고, 그가 원래 부서 옆 팀으로 복귀했다. 당신이 진술을 했다는 사실은 이미 새어 나갔다. 지난주부터 팀 회의에서 발언 기회가 줄었고, 팀장이 당신의 보고서 검토를 자꾸 미룬다. 그리고 오늘, 박 과장이 직접 메시지를 보내왔다. '커피 한잔 어때요?'",
+      tags: ["직장", "보복", "선택"],
+      event_embedding: [-0.12, 0.44, 0.38, 0.28, 0.18, 0.24, -0.14, 0.56],
+      actions: [
+        {
+          id: "meets_park",
+          label: "만나기로 한다",
+          embedding: [0.24, 0.22, 0.28, 0.48, 0.12, 0.18, 0.22, 0.44],
+          bias: 0,
+          outcome: "테이블 맞은편에 앉은 박 과장은 웃고 있었다. 무슨 말이 나올지 알 수 없었다.",
+          endingWeight: { whistleblower: 1, reformer: 1, survivor: 1 }
+        },
+        {
+          id: "seeks_legal_protection",
+          label: "거절하고 공익신고자 보호 상담부터 받는다",
+          embedding: [0.18, -0.24, 0.72, 0.36, -0.14, 0.58, 0.16, 0.78],
+          bias: -0.01,
+          outcome: "변호사 사무실 복도에서 오래 기다렸다. 준비가 된 건지 아직 모르겠다.",
+          endingWeight: { whistleblower: 2, changemaker: 2, martyr: 1 },
+          memory: "법률 상담 예약을 잡으면서 이게 맞는 건지 물어볼 사람이 없었다."
+        },
+        {
+          id: "quietly_job_hunts",
+          label: "아무 말 없이 이직을 준비한다",
+          embedding: [-0.28, 0.18, -0.14, -0.12, 0.44, -0.32, 0.52, -0.44],
+          bias: 0.02,
+          outcome: "이력서를 수정하면서 이 회사 이름을 다시 보게 됐다. 생각보다 오래 있었다.",
+          endingWeight: { exile: 2, survivor: 2 },
+          memory: "이직 사이트를 처음 켠 날, 창을 몇 번이나 껐다가 다시 열었다."
+        }
+      ]
+    },
+    {
+      id: "ME013",
+      title: "후배의 메시지",
+      chapter: "Act 4 · 구조",
+      type: "consequence_of_silence",
+      requires: "denied_testimony",
+      summary: "진술을 거부한 지 석 달이 지났다. 같은 팀에 새로 들어온 이 사원에게서 메신저가 왔다. '잠깐 시간 괜찮으세요?' 직접 만나 얘기를 들어보니, 박 과장에게 비슷한 일을 당했다고 한다. 목소리가 떨렸다. '그때 언니가 말해줬더라면 제가 이 일을 안 당했을 텐데요.' 그 말이 끝나자 둘 다 한동안 말이 없었다.",
+      tags: ["책임", "연대", "후회"],
+      event_embedding: [0.46, 0.38, 0.42, 0.62, -0.18, 0.34, 0.14, 0.64],
+      actions: [
+        {
+          id: "joins_second_report",
+          label: "이번에는 함께 신고하겠다고 한다",
+          embedding: [0.52, -0.12, 0.68, 0.72, -0.22, 0.58, -0.14, 0.82],
+          bias: 0,
+          outcome: "그 애 손을 잠깐 잡았다. 늦었지만 지금이라도.",
+          endingWeight: { whistleblower: 3, reformer: 1, martyr: 2 },
+          memory: "그 애 손을 잡으면서 3년 전의 내가 생각났다. 누군가 이렇게 해줬으면 어땠을까."
+        },
+        {
+          id: "apologizes_and_retreats",
+          label: "미안하다고만 하고 자리를 피한다",
+          embedding: [-0.38, 0.44, -0.48, -0.28, 0.22, -0.42, 0.56, -0.64],
+          bias: 0.03,
+          outcome: "미안하다는 말밖에 할 수가 없었다. 그 애는 고개를 끄덕이며 나갔다.",
+          endingWeight: { forgotten: 3, conformist: 1 },
+          memory: "그 애가 나간 뒤 화장실에서 한참 있었다. 거울을 보지 않으려 했다."
+        },
+        {
+          id: "helps_anonymously",
+          label: "직접 나서는 대신 익명 신고 경로를 알려준다",
+          embedding: [0.32, 0.08, 0.22, 0.44, -0.08, 0.28, 0.34, 0.42],
+          bias: -0.01,
+          outcome: "직접 나서지는 못했지만, 할 수 있는 것을 했다.",
+          endingWeight: { caregiver: 2, survivor: 2, reformer: 1 }
+        }
+      ]
+    },
+    {
+      id: "ME014",
+      title: "외할머니의 유산",
+      chapter: "Act 2 · 압박",
+      type: "family_inheritance_dispute",
+      summary: "외할머니가 돌아가셨다. 삼일장을 치르고 유언장이 공개됐다. 평생 모은 재산의 절반은 교회에, 나머지는 외삼촌에게만. 어머니는 아무것도 받지 못했다. 외삼촌이 할머니의 인지 능력이 흐려졌던 마지막 시기에 유언장 작성을 도왔다는 사실을 친척들은 알고 있지만, 아무도 입 밖에 내지 않는다. 어머니는 '그냥 잊자'고 한다. 하지만 집에 돌아오는 차 안에서 어머니는 말 한마디 없이 창밖만 바라봤다.",
+      tags: ["가족", "유산", "침묵"],
+      event_embedding: [0.58, 0.32, -0.22, 0.66, -0.08, 0.18, 0.44, -0.12],
+      actions: [
+        {
+          id: "respects_mothers_wish",
+          label: "어머니의 뜻을 따라 그냥 넘어간다",
+          embedding: [0.68, 0.24, -0.36, 0.72, -0.18, 0.12, 0.58, -0.22],
+          bias: 0.02,
+          outcome: "넘어갔다. 명절마다 외삼촌과 같은 식탁에 앉는 일이 남았다.",
+          endingWeight: { caregiver: 2, conformist: 2, survivor: 1 }
+        },
+        {
+          id: "investigates_quietly",
+          label: "어머니에게 알리지 않고 먼저 법적 가능성을 알아본다",
+          embedding: [0.44, -0.14, 0.32, 0.52, 0.22, 0.36, 0.28, 0.48],
+          bias: -0.01,
+          outcome: "변호사가 '이길 수는 있지만 그 뒤에 가족이 남겠냐'고 물었다. 대답하지 못했다.",
+          endingWeight: { reformer: 2, caregiver: 1, whistleblower: 1 },
+          memory: "변호사가 '이길 수 있지만 그 뒤에 가족이 남겠냐'고 물었다. 대답하지 못했다."
+        },
+        {
+          id: "confronts_uncle",
+          label: "외삼촌에게 직접 따진다",
+          embedding: [0.36, 0.28, 0.58, 0.48, 0.14, -0.12, -0.38, 0.64],
+          bias: -0.02,
+          outcome: "외삼촌 눈을 보며 말하는 동안 어머니가 울기 시작했다. 이게 옳은 건지 몰랐지만 더 이상 모른 척은 할 수 없었다.",
+          endingWeight: { whistleblower: 2, exile: 1, martyr: 1 },
+          memory: "외삼촌 눈을 보며 말하는 동안 어머니가 울기 시작했다. 이게 옳은 건지 몰랐다."
+        }
+      ]
+    },
+    {
+      id: "ME015",
+      title: "K의 합류 제안",
+      chapter: "Act 2 · 압박",
+      type: "startup_offer_with_known_risk",
+      summary: "대학 때 가장 친했던 K에게서 오랜만에 연락이 왔다. 자신이 창업한 스타트업에 합류해달라고 한다. 조건도 나쁘지 않고, K와 함께라면 해볼 만하다는 생각도 든다. 그런데 당신은 기억하고 있다. 몇 년 전 K가 첫 번째 스타트업에서 공동창업자를 밀어낸 일. 그 공동창업자는 지분도 제대로 받지 못하고 쫓겨났다. 당신 말고는 아무도 그 내막을 모른다.",
+      tags: ["우정", "신뢰", "선택"],
+      event_embedding: [0.22, 0.18, 0.32, 0.54, 0.38, 0.16, 0.28, 0.44],
+      actions: [
+        {
+          id: "joins_k",
+          label: "합류하기로 한다",
+          embedding: [0.42, 0.34, -0.18, 0.62, 0.44, -0.12, 0.28, -0.22],
+          bias: 0.03,
+          outcome: "합류했다. K는 반가워했다. 지금은 좋다. 지금은.",
+          endingWeight: { opportunist: 2, caregiver: 1, survivor: 1 },
+          unlocks: "joined_k_startup"
+        },
+        {
+          id: "declines_and_tells_k",
+          label: "과거의 일을 솔직히 말하고 거절한다",
+          embedding: [0.28, -0.14, 0.62, 0.44, -0.18, 0.48, 0.22, 0.72],
+          bias: -0.01,
+          outcome: "K는 한동안 말이 없었다. 통화가 끊겼다. 잘한 건지 모르겠다.",
+          endingWeight: { whistleblower: 2, reformer: 1, exile: 1 },
+          memory: "K에게 그 일을 꺼내는 데 생각보다 오래 걸렸다. 말을 시작하고 나서야 손이 떨리는 걸 알았다.",
+          unlocks: "told_k_truth"
+        },
+        {
+          id: "declines_with_excuse",
+          label: "다른 핑계를 대고 거절한다",
+          embedding: [-0.12, 0.22, -0.28, 0.14, 0.32, -0.24, 0.58, -0.38],
+          bias: 0.01,
+          outcome: "요즘 바쁘다고 했다. K는 아쉽다며 끊었다. 불편한 침묵이 오래 남았다.",
+          endingWeight: { conformist: 2, survivor: 2 }
+        }
+      ]
+    },
+    {
+      id: "ME016",
+      title: "K의 두 번째 배신",
+      chapter: "Act 4 · 구조",
+      type: "betrayal_from_inside",
+      requires: "joined_k_startup",
+      summary: "합류한 지 일 년이 지났다. 스타트업은 잘 굴러가고 있다. 그런데 최근 K의 행동이 이상하다. 공동창업자 J의 지분 계약서가 수정됐다는 이야기를 우연히 들었다. J는 모르는 것 같다. 확인해보니 사실이었다. K가 똑같이 하고 있다. 당신은 내부에 있어서 안다. J는 아직 아무것도 모른다.",
+      tags: ["배신", "연대", "내부"],
+      event_embedding: [-0.18, 0.38, 0.62, 0.44, 0.28, -0.14, -0.32, 0.56],
+      actions: [
+        {
+          id: "warns_j_directly",
+          label: "J에게 직접 알린다",
+          embedding: [0.44, -0.12, 0.72, 0.58, -0.22, 0.44, -0.28, 0.78],
+          bias: 0,
+          outcome: "J는 충격을 받았다. K는 그날 이후 당신을 다르게 본다.",
+          endingWeight: { whistleblower: 3, reformer: 1, exile: 1 },
+          memory: "J에게 말하고 나서 K의 얼굴을 마주쳤다. 아무 말 없이 지나쳤다."
+        },
+        {
+          id: "confronts_k_privately",
+          label: "K에게 먼저 따진다",
+          embedding: [0.32, 0.14, 0.54, 0.48, 0.18, 0.22, 0.12, 0.62],
+          bias: -0.01,
+          outcome: "K는 '오해'라고 했다. 표정은 그렇지 않았다.",
+          endingWeight: { reformer: 2, whistleblower: 1, survivor: 1 }
+        },
+        {
+          id: "stays_out_of_it",
+          label: "모른 척하고 내 일만 한다",
+          embedding: [-0.28, 0.32, -0.44, -0.18, 0.48, -0.32, 0.62, -0.52],
+          bias: 0.03,
+          outcome: "내 계약서는 안전했다. J의 일은 내 일이 아니라고 생각했다. 생각하려 했다.",
+          endingWeight: { conformist: 3, opportunist: 2 },
+          memory: "J가 나중에 알게 됐을 때 내 이름을 꺼냈다는 얘기를 전해 들었다."
+        }
+      ]
+    },
+    {
+      id: "ME017",
+      title: "K의 전화",
+      chapter: "Act 4 · 구조",
+      type: "unexpected_vindication",
+      requires: "told_k_truth",
+      summary: "솔직하게 거절한 뒤 연락이 끊겼던 K가 3년 만에 전화를 걸어왔다. K의 두 번째 스타트업은 올해 투자를 받으며 크게 성장했다. 처음에 K는 근황을 묻더니 이렇게 말했다. '그때 네가 그 말 해줘서, 내가 달라질 수 있었어. 그 공동창업자한테도 연락해서 사과했어.' 그리고 제안을 꺼낸다. 이번 스타트업의 파트너로 함께하자고.",
+      tags: ["화해", "선택", "두 번째 기회"],
+      event_embedding: [0.36, -0.22, 0.28, 0.58, 0.42, 0.34, 0.18, 0.52],
+      actions: [
+        {
+          id: "accepts_k_offer",
+          label: "K의 제안을 받아들인다",
+          embedding: [0.52, -0.18, 0.22, 0.68, 0.38, 0.42, 0.24, 0.46],
+          bias: 0,
+          outcome: "이번엔 달랐다. 아니, 다를 것이라고 생각했다.",
+          endingWeight: { reformer: 2, changemaker: 2, caregiver: 1 },
+          memory: "K와 악수하면서 3년 전 통화가 떠올랐다. 그때는 잘한 건지 몰랐다."
+        },
+        {
+          id: "declines_k_again",
+          label: "고맙지만 이번에도 거절한다",
+          embedding: [0.18, -0.08, 0.44, 0.32, -0.12, 0.36, 0.28, 0.62],
+          bias: -0.01,
+          outcome: "K는 이번엔 웃으며 받아들였다. 관계는 달라졌다.",
+          endingWeight: { exile: 2, survivor: 2, reformer: 1 },
+          memory: "K가 먼저 전화를 끊었다. 이번엔 불편하지 않았다."
+        }
+      ]
+    },
+    {
+      id: "ME018",
+      title: "아버지의 전화",
+      chapter: "Act 3 · 선택의 대가",
+      type: "family_favor_request",
+      summary: "저녁 늦게 아버지한테서 전화가 왔다. 지인 아들이 당신 회사 면접을 앞두고 있다며, '이름만 한번 얘기해줘도 되지 않냐'고 한다. 아버지는 '네가 이런 부탁 싫어하는 거 안다. 근데 이번 한 번만'이라고 했다. 그 말이 맞다. 아버지는 이런 부탁을 처음 한다. 그 지인이 어머니 병원비를 빌려줬던 사람이라는 것도 알고 있다.",
+      tags: ["가족", "청탁", "의리"],
+      event_embedding: [0.54, 0.28, -0.18, 0.64, 0.12, -0.08, 0.42, -0.14],
+      actions: [
+        {
+          id: "agrees_to_mention",
+          label: "이름 정도는 말해두겠다고 한다",
+          embedding: [0.62, 0.44, -0.36, 0.72, 0.22, -0.18, 0.34, -0.28],
+          bias: 0.03,
+          outcome: "전화를 끊고 나서 담당자한테 짧은 메시지를 보냈다. 그게 전부였다. 그게 전부가 아닐 수도 있다.",
+          endingWeight: { caregiver: 2, opportunist: 2, conformist: 1 },
+          memory: "메시지를 보내고 나서 몇 번이나 다시 읽었다. 지우지는 않았다."
+        },
+        {
+          id: "declines_explains",
+          label: "못 하겠다고, 이유를 말한다",
+          embedding: [0.24, -0.22, 0.58, 0.36, -0.28, 0.52, 0.18, 0.74],
+          bias: -0.01,
+          outcome: "아버지는 '그래, 알았다'고 했다. 목소리가 낮았다. 그 뒤로 며칠 동안 연락이 없었다.",
+          endingWeight: { reformer: 2, whistleblower: 1, exile: 1 },
+          memory: "아버지가 '그래, 알았다'고 했을 때의 목소리가 며칠 동안 머릿속에 남았다."
+        },
+        {
+          id: "stalls_with_excuse",
+          label: "내가 거기 영향력이 없다며 에둘러 거절한다",
+          embedding: [-0.08, 0.18, -0.22, 0.12, 0.24, -0.14, 0.56, -0.32],
+          bias: 0.01,
+          outcome: "아버지는 '그렇구나' 하고 넘어갔다. 거짓말은 아니었지만 사실도 아니었다.",
+          endingWeight: { conformist: 2, survivor: 2 }
+        }
+      ]
+    },
+    {
+      id: "ME019",
+      title: "동료의 보고서",
+      chapter: "Act 1 · 균열",
+      type: "colleague_mistake_dilemma",
+      summary: "내일 오전 임원 보고가 있다. 퇴근 준비를 하다가 같은 팀 최 대리의 보고서에서 수치 오류를 발견했다. 작은 실수가 아니다. 이 숫자가 그대로 올라가면 임원이 잘못된 방향으로 의사결정을 내릴 수 있다. 최 대리는 이미 퇴근했다. 연락을 하면 야근을 해야 하고, 최 대리 실수가 드러난다. 아무 말 안 하면 내일 보고가 그대로 올라간다.",
+      tags: ["동료", "책임", "조직"],
+      event_embedding: [0.18, 0.12, 0.48, 0.32, 0.22, 0.38, 0.54, 0.62],
+      actions: [
+        {
+          id: "contacts_colleague",
+          label: "최 대리에게 바로 연락한다",
+          embedding: [0.44, -0.14, 0.42, 0.56, -0.12, 0.48, 0.32, 0.68],
+          bias: 0,
+          outcome: "최 대리는 당황했지만 고마워했다. 둘이 늦게까지 수정했다.",
+          endingWeight: { caregiver: 2, reformer: 1, whistleblower: 1 }
+        },
+        {
+          id: "fixes_silently",
+          label: "말없이 혼자 수정해서 올린다",
+          embedding: [0.34, -0.08, 0.22, 0.44, 0.08, 0.28, 0.44, 0.48],
+          bias: 0.01,
+          outcome: "보고는 무사히 넘어갔다. 최 대리는 모른다. 당신만 안다.",
+          endingWeight: { survivor: 2, caregiver: 2 },
+          memory: "최 대리가 보고 잘 됐다며 웃을 때 아무 말도 하지 않았다."
+        },
+        {
+          id: "reports_to_team_lead",
+          label: "팀장에게 먼저 보고한다",
+          embedding: [0.22, 0.08, 0.38, 0.28, 0.34, 0.42, 0.62, 0.52],
+          bias: -0.01,
+          outcome: "팀장이 처리했다. 최 대리는 다음날 팀장에게 불려갔다.",
+          endingWeight: { conformist: 1, reformer: 1, opportunist: 1 }
+        }
+      ]
+    },
+    {
+      id: "ME020",
+      title: "익명 제보",
+      chapter: "Act 5 · 공개",
+      type: "anonymous_whistleblowing",
+      summary: "회사 안에서 조직적인 회계 조작이 이루어지고 있다는 정황을 알게 됐다. 당신이 직접 관여한 건 아니지만, 관련 자료가 담긴 메일을 우연히 봤다. 언론에 익명으로 제보하는 방법이 있다. 들키면 모든 게 끝난다. 하지만 아무도 모르게 넘어가면 이 구조는 계속된다.",
+      tags: ["고발", "위험", "구조"],
+      event_embedding: [0.08, 0.32, 0.74, 0.22, 0.46, 0.28, -0.24, 0.68],
+      actions: [
+        {
+          id: "reports_anonymously",
+          label: "익명으로 언론에 제보한다",
+          embedding: [0.14, -0.24, 0.82, 0.28, 0.18, 0.44, -0.32, 0.86],
+          bias: -0.01,
+          outcome: "제보 메일을 보내고 화면을 닫았다. 언제 어떻게 터질지 모른다.",
+          endingWeight: { whistleblower: 3, changemaker: 2, martyr: 1 },
+          memory: "제보 메일의 전송 버튼을 누르기 전에 30초 동안 화면을 바라봤다.",
+          unlocks: "filed_anonymous_report"
+        },
+        {
+          id: "saves_evidence_quietly",
+          label: "일단 자료만 따로 보관해둔다",
+          embedding: [0.08, 0.14, 0.34, 0.18, 0.28, 0.12, 0.22, 0.42],
+          bias: 0.02,
+          outcome: "외장하드에 저장했다. 언젠가 필요할지도 모른다는 생각으로.",
+          endingWeight: { survivor: 2, whistleblower: 1 },
+          unlocks: "saved_evidence"
+        },
+        {
+          id: "deletes_and_forgets",
+          label: "본 것을 지우고 모른 척한다",
+          embedding: [-0.24, 0.36, -0.62, -0.28, 0.42, -0.36, 0.58, -0.64],
+          bias: 0.03,
+          outcome: "메일 창을 닫았다. 본 게 없는 사람이 되기로 했다.",
+          endingWeight: { conformist: 3, forgotten: 1 },
+          memory: "메일 창을 닫은 뒤로 그 숫자들이 며칠간 머릿속에 맴돌았다."
+        }
+      ]
+    },
+    {
+      id: "ME021a",
+      title: "기자가 찾아왔다",
+      chapter: "Act 5 · 공개",
+      type: "journalist_contact",
+      requires: "filed_anonymous_report",
+      summary: "제보한 지 두 달이 지났다. 그리고 오늘 오후, 경제부 기자라는 사람에게서 문자가 왔다. '제보 내용과 관련해 직접 여쭤볼 게 있습니다.' 익명 제보였는데 어떻게 연락처를 알아낸 건지 모른다. 기자를 만나면 이제 익명이 아니게 된다. 만나지 않으면 기사가 약해질 수 있다.",
+      tags: ["언론", "공개", "결단"],
+      event_embedding: [-0.14, 0.42, 0.68, 0.18, 0.54, 0.22, -0.18, 0.64],
+      actions: [
+        {
+          id: "meets_journalist",
+          label: "만나기로 한다. 더 이상 숨지 않는다",
+          embedding: [0.22, -0.28, 0.76, 0.34, 0.12, 0.48, -0.24, 0.84],
+          bias: 0,
+          outcome: "카페에서 한 시간 동안 얘기했다. 기자는 녹음기를 켰다. 이제 되돌릴 수 없다.",
+          endingWeight: { whistleblower: 3, changemaker: 2, martyr: 2 },
+          memory: "기자 앞에 앉아서 처음으로 내 이름을 댔다. 목소리가 떨리지 않으려 했다."
+        },
+        {
+          id: "declines_journalist",
+          label: "모른다고 답하고 연락을 끊는다",
+          embedding: [-0.18, 0.24, -0.32, -0.14, 0.38, -0.22, 0.52, -0.44],
+          bias: 0.02,
+          outcome: "모른다고 했다. 기사는 제한적으로 나왔다. 회사는 '사실무근'이라고 했다.",
+          endingWeight: { survivor: 2, conformist: 1, forgotten: 1 }
+        }
+      ]
+    },
+    {
+      id: "ME021b",
+      title: "증거의 무게",
+      chapter: "Act 5 · 공개",
+      type: "evidence_decision",
+      requires: "saved_evidence",
+      summary: "조용히 자료만 모아둔 지 반 년이 지났다. 그 사이 회사 내부 감사가 시작됐고, 감사팀이 직원들을 개별 면담하고 있다. 당신 차례가 내일이다. 외장하드는 아직 서랍 안에 있다. 제출하면 조사가 달라질 수 있다. 하지만 당신이 그 자료를 갖고 있었다는 사실 자체가 문제가 될 수도 있다.",
+      tags: ["증거", "감사", "판단"],
+      event_embedding: [0.12, 0.28, 0.58, 0.24, 0.36, 0.34, 0.14, 0.62],
+      actions: [
+        {
+          id: "submits_evidence",
+          label: "내일 면담에서 자료를 제출한다",
+          embedding: [0.24, -0.18, 0.72, 0.38, -0.12, 0.56, 0.08, 0.78],
+          bias: 0,
+          outcome: "자료를 꺼냈다. 감사관이 오래 들여다봤다. 면담이 두 시간이 됐다.",
+          endingWeight: { whistleblower: 3, reformer: 2, martyr: 1 },
+          memory: "외장하드를 내밀면서 이제 내 손을 떠났다는 걸 느꼈다."
+        },
+        {
+          id: "keeps_evidence_hidden",
+          label: "자료를 제출하지 않고 면담을 마친다",
+          embedding: [-0.14, 0.22, -0.28, -0.08, 0.44, -0.18, 0.48, -0.36],
+          bias: 0.02,
+          outcome: "면담은 무난히 끝났다. 외장하드는 아직 서랍에 있다.",
+          endingWeight: { survivor: 3, conformist: 1 },
+          memory: "면담을 마치고 자리로 돌아와 서랍을 한 번 열었다가 닫았다."
+        }
+      ]
+    },
+    {
+      id: "ME022",
+      title: "선배의 방식",
+      chapter: "Act 1 · 균열",
+      type: "generational_workplace_conflict",
+      summary: "입사한 지 두 달이 됐다. 팀에서 가장 경력이 긴 윤 차장이 오늘도 당신 옆에 앉았다. '이 보고서는 원래 이렇게 쓰는 거야.' 그런데 그 방식은 느리고, 수치를 임의로 반올림하며, 공식 양식도 아니다. 회사 전체가 이 방식으로 수년째 보고해왔다. 문제를 제기하면 '신입이 뭘 안다고'가 될 것을 안다. 그냥 따르면 이 방식이 계속된다.",
+      tags: ["직장", "관행", "세대"],
+      event_embedding: [-0.08, 0.24, 0.42, 0.18, 0.36, 0.12, 0.54, 0.38],
+      actions: [
+        {
+          id: "follows_senior",
+          label: "일단 선배 방식대로 따른다",
+          embedding: [-0.18, 0.34, -0.48, 0.12, 0.42, -0.22, 0.68, -0.44],
+          bias: 0.04,
+          outcome: "윤 차장이 흡족해했다. 적응했다는 말을 들었다. 보고서는 오늘도 그 방식으로 올라갔다.",
+          endingWeight: { conformist: 3, survivor: 2 }
+        },
+        {
+          id: "raises_issue_privately",
+          label: "윤 차장에게 개인적으로 다른 방식을 제안해본다",
+          embedding: [0.28, -0.12, 0.44, 0.38, 0.14, 0.32, 0.22, 0.58],
+          bias: -0.01,
+          outcome: "윤 차장은 잠시 생각하더니 '한번 해봐' 했다. 의외였다.",
+          endingWeight: { reformer: 2, caregiver: 1, whistleblower: 1 },
+          memory: "윤 차장이 '한번 해봐'라고 했을 때, 예상치 못한 대답이라 잠시 말을 잃었다."
+        },
+        {
+          id: "reports_to_team_lead_quietly",
+          label: "팀장에게 조용히 문의한다",
+          embedding: [0.12, 0.08, 0.32, 0.24, 0.28, 0.38, 0.44, 0.46],
+          bias: 0.01,
+          outcome: "팀장은 '예전부터 그랬어'라고만 했다. 문제는 팀장도 알고 있었다.",
+          endingWeight: { reformer: 1, survivor: 1, conformist: 1 }
+        }
+      ]
+    },
+    {
+      id: "ME023",
+      title: "탄원서",
+      chapter: "Act 3 · 선택의 대가",
+      type: "petition_under_pressure",
+      summary: "회사가 지방 공장 직원 200명을 구조조정하겠다고 발표했다. 며칠 뒤, 사무직 직원들 사이에서 반대 탄원서가 돌기 시작했다. 서명자 명단은 결국 위에 올라간다. 찍힐 수 있다는 걸 모두 안다. 그런데 당신 바로 앞자리 동료가 리스트를 내밀었다. '같이 서명할 거지?'",
+      tags: ["연대", "위험", "동료"],
+      event_embedding: [0.32, 0.18, 0.56, 0.44, -0.14, 0.28, -0.22, 0.52],
+      actions: [
+        {
+          id: "signs_petition",
+          label: "서명한다",
+          embedding: [0.44, -0.08, 0.68, 0.52, -0.22, 0.42, -0.18, 0.72],
+          bias: 0,
+          outcome: "이름을 적었다. 손이 떨리지는 않았다. 떨렸는지도 모른다.",
+          endingWeight: { whistleblower: 2, reformer: 2, martyr: 1 },
+          memory: "탄원서에 이름을 쓰고 나서 리스트를 다시 내려다봤다. 내 이름이 거기 있었다."
+        },
+        {
+          id: "declines_politely",
+          label: "개인 사정을 이유로 거절한다",
+          embedding: [-0.12, 0.22, -0.34, -0.08, 0.38, -0.16, 0.54, -0.38],
+          bias: 0.03,
+          outcome: "동료는 '그래, 어쩔 수 없지'라고 했다. 오후 내내 눈이 마주치지 않았다.",
+          endingWeight: { survivor: 3, conformist: 1 },
+          memory: "동료가 '그래, 어쩔 수 없지'라고 했을 때의 표정이 생각보다 오래 남았다."
+        },
+        {
+          id: "checks_legal_risks_first",
+          label: "서명 전에 법적 불이익 여부를 먼저 확인한다",
+          embedding: [0.18, 0.12, 0.28, 0.32, 0.16, 0.28, 0.42, 0.44],
+          bias: -0.01,
+          outcome: "노무사에게 짧게 문의했다. 보복 금지 조항이 있지만, 현실적으로 보장되지는 않는다고 했다.",
+          endingWeight: { reformer: 1, survivor: 1, whistleblower: 1 }
+        }
+      ]
+    },
+    {
+      id: "ME024",
+      title: "다른 팀으로",
+      chapter: "Act 2 · 압박",
+      type: "internal_transfer_decision",
+      summary: "다른 부서에서 이동 제안이 왔다. 현재 팀보다 연봉도 높고 업무도 맞다. 지금 팀은 프로젝트가 막바지라 인원이 빠지면 힘들다. 팀장은 아무 말도 하지 않았지만 표정이 굳었다. 이동은 당신의 권리다. 그리고 팀은 당신이 없으면 무너질 수도 있다.",
+      tags: ["커리어", "동료", "책임"],
+      event_embedding: [0.14, -0.18, 0.12, 0.28, 0.54, 0.38, 0.32, 0.22],
+      actions: [
+        {
+          id: "transfers_now",
+          label: "제안을 받아들이고 이동한다",
+          embedding: [-0.22, 0.12, 0.18, -0.14, 0.62, 0.14, 0.38, -0.18],
+          bias: 0.02,
+          outcome: "이동했다. 새 팀은 좋았다. 전 팀 프로젝트는 어떻게 됐는지 나중에야 들었다.",
+          endingWeight: { opportunist: 2, survivor: 2 },
+          unlocks: "transferred_away"
+        },
+        {
+          id: "delays_for_team",
+          label: "프로젝트가 끝날 때까지 기다렸다가 이동한다",
+          embedding: [0.44, -0.14, 0.08, 0.48, 0.22, 0.32, 0.28, 0.42],
+          bias: -0.01,
+          outcome: "세 달을 기다렸다. 제안이 아직 유효한지는 확인해봐야 했다.",
+          endingWeight: { caregiver: 2, reformer: 1, survivor: 1 }
+        },
+        {
+          id: "declines_offer",
+          label: "제안을 거절하고 현 팀에 남는다",
+          embedding: [0.52, -0.08, -0.14, 0.58, -0.12, 0.18, 0.44, 0.12],
+          bias: 0,
+          outcome: "팀장이 뭔가 말하려다 그냥 자리로 돌아갔다. 프로젝트는 무사히 끝났다.",
+          endingWeight: { caregiver: 3, martyr: 1 },
+          memory: "팀장이 뭔가 말하려다 그냥 돌아가는 뒷모습을 봤다. 묻지 않았다."
+        }
+      ]
+    },
+    {
+      id: "ME025",
+      title: "전 팀의 연락",
+      chapter: "Act 4 · 구조",
+      type: "return_request_from_old_team",
+      requires: "transferred_away",
+      summary: "이동한 지 여섯 달이 됐다. 전 팀에서 메시지가 왔다. 그때 같이 일했던 후배 정 사원이다. '선배, 저희 지금 너무 힘들어요. 그 프로젝트 후속 건인데 선배가 맡던 부분이 아직 정리가 안 됐어요. 도와주실 수 있어요?' 새 팀 업무도 한창이다. 돌아보는 건 의무가 아니다. 하지만 그 팀이 힘든 건 당신이 빠진 것과 무관하지 않다.",
+      tags: ["책임", "경계", "동료"],
+      event_embedding: [0.48, 0.22, 0.18, 0.62, -0.08, 0.14, 0.28, 0.32],
+      actions: [
+        {
+          id: "helps_after_hours",
+          label: "퇴근 후에 따로 시간을 내 도와준다",
+          embedding: [0.62, 0.14, 0.08, 0.74, -0.18, 0.22, 0.18, 0.28],
+          bias: 0,
+          outcome: "두 주 동안 저녁마다 통화했다. 전 팀은 고마워했다. 피로가 쌓였다.",
+          endingWeight: { caregiver: 3, martyr: 1 },
+          memory: "자정에 통화를 끊고 나서 새 팀 업무가 쌓여 있는 걸 봤다."
+        },
+        {
+          id: "sets_boundary_kindly",
+          label: "미안하지만 지금은 여력이 없다고 정중히 말한다",
+          embedding: [0.18, -0.14, 0.22, 0.34, 0.28, 0.32, 0.38, 0.44],
+          bias: -0.01,
+          outcome: "후배는 '그렇구나요'라고 했다. 섭섭한 것 같았다. 어쩔 수 없다.",
+          endingWeight: { survivor: 2, exile: 1, reformer: 1 }
+        },
+        {
+          id: "escalates_to_management",
+          label: "인수인계 문제라며 관리자 선에서 해결하도록 넘긴다",
+          embedding: [0.12, 0.08, 0.34, 0.22, 0.42, 0.44, 0.52, 0.38],
+          bias: 0.01,
+          outcome: "관리자가 처리했다. 후배에게는 직접 연락하지 않았다.",
+          endingWeight: { conformist: 1, opportunist: 1, survivor: 2 }
+        }
+      ]
     }
   ];
 
@@ -1373,7 +1949,10 @@
     const endingScores = {};
     let routeProbability = 1;
     let currentLatent = [...adultLatent];
-    const eventResults = EVENTS.map(event => {
+    const unlockedFlags = new Set();
+    const eventResults = [];
+    for (const event of EVENTS) {
+      if (event.requires && !unlockedFlags.has(event.requires)) continue;
       const routeSeed = `${character.id || characterText(character)}:${character.innate_seed || "no-seed"}:${event.id}`;
       const interpretation = interpretPersonaForEvent(event, currentLatent, promptText, structurePrior, compatibleModel, routeSeed);
       const action = interpretation.action;
@@ -1382,13 +1961,14 @@
       Object.entries(action.endingWeight).forEach(([endingKey, weight]) => {
         endingScores[endingKey] = (endingScores[endingKey] || 0) + weight;
       });
+      if (action.unlocks) unlockedFlags.add(action.unlocks);
       const latentBefore = [...currentLatent];
       const latentAfter = updatePersonaState(currentLatent, event.event_embedding, action.embedding, {
         eventId: event.id,
         actionId: action.id
       });
       currentLatent = latentAfter;
-      return {
+      eventResults.push({
         event_id: event.id,
         chapter: event.chapter,
         model_id: interpretation.model_id,
@@ -1416,8 +1996,8 @@
         latent_contributors: rationale.latent_contributors,
         outcome: action.outcome,
         ending_flag: false
-      };
-    });
+      });
+    }
 
     const endingKey = Object.entries(endingScores).sort((a, b) => b[1] - a[1])[0][0];
     const ending = { ...ENDINGS[endingKey] };
@@ -1470,12 +2050,16 @@
     let currentLatent = normalize(latentVector.map(value => clamp(value)));
     const compatibleModel = isCompatibleModel(neuralModel, structurePrior) ? neuralModel : null;
     let routeProbability = 1;
-    const events = EVENTS.map(event => {
+    const dynFlags = new Set();
+    const events = [];
+    for (const event of EVENTS) {
+      if (event.requires && !dynFlags.has(event.requires)) continue;
       const routeSeed = `${character.id || promptText}:${runLabel}:${event.id}`;
       const interpretation = interpretPersonaForEvent(event, currentLatent, promptText, structurePrior, compatibleModel, routeSeed);
       const action = interpretation.action;
       const rationale = interpretation.rationale;
       routeProbability *= action.choice_probability || 1;
+      if (action.unlocks) dynFlags.add(action.unlocks);
       const latentBefore = [...currentLatent];
       const latentAfter = updatePersonaState(currentLatent, event.event_embedding, action.embedding, {
         eventId: event.id,
@@ -1483,7 +2067,7 @@
         runLabel
       });
       currentLatent = latentAfter;
-      return {
+      events.push({
         event_id: event.id,
         chapter: event.chapter,
         model_id: interpretation.model_id,
@@ -1512,9 +2096,9 @@
         outcome: action.outcome,
         ending_flag: false,
         run_label: runLabel
-      };
-    });
-    events[events.length - 1].ending_flag = true;
+      });
+    }
+    if (events.length > 0) events[events.length - 1].ending_flag = true;
     return {
       run_label: runLabel,
       neural_model_id: compatibleModel?.id || null,

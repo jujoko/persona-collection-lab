@@ -41,7 +41,8 @@ for (const character of characters) {
   assert.strictEqual(simulation.persona_card.core_traits.length, 3);
   assert.ok(simulation.persona_card.prediction_hints.length >= 2);
   assert.strictEqual(simulation.persona_card.growth_summary.length, simulation.developmental_logs.length);
-  assert.strictEqual(simulation.events.length, 10);
+  assert.ok(simulation.events.length >= 10);
+  assert.ok(simulation.events.length <= engine.EVENTS.length);
   assert.ok(simulation.ending.id.startsWith("END_"));
   assert.strictEqual(simulation.latent_persona.length, simulation.persona_structure_prior.latent_dimension);
   assert.ok(simulation.latent_edges.length > 0);
@@ -63,7 +64,7 @@ for (const character of characters) {
     assert.strictEqual(event.model_id, "M2_persona_to_prompt_interpreter");
     assert.ok(event.action_probability > 0 && event.action_probability <= 1);
     assert.ok(Array.isArray(event.action_distribution));
-    assert.strictEqual(event.action_distribution.length, 3);
+    assert.ok(event.action_distribution.length >= 2);
     assert.ok(Array.isArray(event.visible_action_ids));
     assert.ok(event.visible_action_ids.length >= 2);
     assert.ok(event.visible_action_ids.includes(event.action));
@@ -99,7 +100,8 @@ for (const character of characters) {
     "test_rerun",
     neuralModel
   );
-  assert.strictEqual(dynamicRun.events.length, 10);
+  assert.ok(dynamicRun.events.length >= 10);
+  assert.ok(dynamicRun.events.length <= engine.EVENTS.length);
   assert.strictEqual(dynamicRun.run_label, "test_rerun");
   assert.strictEqual(dynamicRun.latent_persona.length, simulation.persona_structure_prior.latent_dimension);
   assert.ok(dynamicRun.ending.id.startsWith("END_"));
