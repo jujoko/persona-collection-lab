@@ -116,6 +116,11 @@ const FLAG_DEFINITIONS = {
     values: [false, true],
     set_in: "arc6",
     description: "이전 팀에서 이동했는지 여부"
+  },
+  fraud_discovered: {
+    values: [false, true],
+    set_in: "arc5",
+    description: "직장에서 부정 정황을 확인했는지 여부"
   }
 };
 
@@ -145,7 +150,8 @@ const FLAG_DEFAULTS = {
   told_k_truth: false,
   filed_anonymous_report: false,
   saved_evidence: false,
-  transferred_away: false
+  transferred_away: false,
+  fraud_discovered: false
 };
 
 /**
