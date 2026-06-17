@@ -14,7 +14,7 @@ for (const file of files) {
 const index = await readFile("public/index.html", "utf8");
 const app = await readFile("public/app.js", "utf8");
 
-assert.equal(index.includes("페르소나 궤적"), true, "index.html should show the game title");
+assert.equal(index.includes("라이프: 코드"), true, "index.html should show the game title");
 assert.equal(index.includes("캐릭터 생성"), true, "index.html should show the character creation action");
 assert.equal(app.includes("data-predict-character-id"), true, "app.js should render prediction choices");
 assert.equal(app.includes("persona-brief-card"), true, "app.js should render the persona briefing card");

@@ -90,26 +90,9 @@ CREATE INDEX IF NOT EXISTS feedback_event_id_idx
   ON feedback (event_id);
 
 -- 기존 데이터가 있어도 마이그레이션 자체는 막지 않도록 NOT VALID로 추가한다.
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'characters_latent_seed_len'
-  ) THEN
-    ALTER TABLE characters ADD CONSTRAINT characters_latent_seed_len
-      CHECK (latent_seed IS NULL OR cardinality(latent_seed) = 8) NOT VALID;
-  END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'simulations_infant_latent_len'
-  ) THEN
-    ALTER TABLE simulations ADD CONSTRAINT simulations_infant_latent_len
-      CHECK (infant_latent IS NULL OR cardinality(infant_latent) = 8) NOT VALID;
-  END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'simulations_final_latent_len'
-  ) THEN
-    ALTER TABLE simulations ADD CONSTRAINT simulations_final_latent_len
-      CHECK (final_latent IS NULL OR cardinality(final_latent) = 8) NOT VALID;
-  END IF;
-END $$;
+-- latent 벡터 차원 제약 제거 (실제 차원이 엔진 설정에 따라 가변적)
+ALTER TABLE characters DROP CONSTRAINT IF EXISTS characters_latent_seed_len;
+ALTER TABLE simulations DROP CONSTRAINT IF EXISTS simulations_infant_latent_len;
+ALTER TABLE simulations DROP CONSTRAINT IF EXISTS simulations_final_latent_len;
 
 COMMIT;
