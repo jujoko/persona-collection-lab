@@ -506,16 +506,16 @@
   ];
 
   const ENDINGS = {
-    survivor:     { id: "END_survivor",     title: "생존자",      survived: true,  social_memory: "조용히 살아남은 사람",            world_impact: "low" },
-    whistleblower:{ id: "END_whistleblower",title: "내부고발자",  survived: true,  social_memory: "대가를 치르고 진실을 말한 사람",   world_impact: "medium" },
-    conformist:   { id: "END_conformist",   title: "순응자",      survived: true,  social_memory: "조직 안에서 타협하며 살아간 사람", world_impact: "low" },
-    reformer:     { id: "END_reformer",     title: "개혁자",      survived: true,  social_memory: "구조를 바꾸는 데 기여한 사람",     world_impact: "high" },
-    exile:        { id: "END_exile",        title: "아웃사이더",  survived: true,  social_memory: "시스템 밖으로 밀려난 사람",        world_impact: "low" },
-    caregiver:    { id: "END_caregiver",    title: "돌보는 사람", survived: true,  social_memory: "주변을 먼저 챙기며 살아간 사람",   world_impact: "medium" },
-    opportunist:  { id: "END_opportunist",  title: "기회주의자",  survived: true,  social_memory: "상황을 이용해 이득을 취한 사람",   world_impact: "medium" },
-    martyr:       { id: "END_martyr",       title: "순교자",      survived: false, social_memory: "신념 때문에 모든 것을 잃은 사람",  world_impact: "medium" },
-    forgotten:    { id: "END_forgotten",    title: "잊혀진 사람", survived: false, social_memory: "기록에서 사라진 이름",             world_impact: "low" },
-    changemaker:  { id: "END_changemaker",  title: "세상을 바꾼 사람", survived: true, social_memory: "새 기준을 만든 사람",         world_impact: "very_high" }
+    survivor:     { id: "END_survivor",     title: "생존자",        survived: true,  social_memory: "파도가 올 때마다 몸을 낮췄다. 조용히, 그러나 끝까지 버텼다",                              world_impact: "low" },
+    whistleblower:{ id: "END_whistleblower",title: "내부고발자",    survived: true,  social_memory: "진실을 말하는 데 직업과 관계를 걸었다. 옳았지만 오랫동안 혼자였다",                       world_impact: "medium" },
+    conformist:   { id: "END_conformist",   title: "순응자",        survived: true,  social_memory: "조직의 언어를 배우고 원하는 것을 얻었다. 그 대가가 무엇이었는지는 말하지 않는다",          world_impact: "low" },
+    reformer:     { id: "END_reformer",     title: "개혁자",        survived: true,  social_memory: "혼자서는 바꿀 수 없는 것을 사람들을 모아 바꿨다. 구조가 이전과 달라졌다",                  world_impact: "high" },
+    exile:        { id: "END_exile",        title: "이탈자",        survived: true,  social_memory: "시스템 안에서 살아가는 법을 거부했다. 바깥이 더 자신답다고 생각했다",                       world_impact: "low" },
+    caregiver:    { id: "END_caregiver",    title: "버팀목",        survived: true,  social_memory: "자신보다 옆 사람을 먼저 봤다. 기억하는 사람이 많지 않아도 그것으로 충분했다",               world_impact: "medium" },
+    opportunist:  { id: "END_opportunist",  title: "기회주의자",    survived: true,  social_memory: "모든 상황에서 이득이 어디 있는지 먼저 계산했다. 살아남았지만 신뢰는 잃었다",               world_impact: "medium" },
+    martyr:       { id: "END_martyr",       title: "소진된 신념가", survived: false, social_memory: "끝까지 포기하지 않았지만 결국 모든 것을 잃었다. 신념이 삶보다 앞서는 순간이 있었다",        world_impact: "medium" },
+    forgotten:    { id: "END_forgotten",    title: "잊혀진 사람",   survived: false, social_memory: "살아있는 동안 아무도 알아주지 않았다. 기록되지 않은 삶도 삶이었다",                         world_impact: "low" },
+    changemaker:  { id: "END_changemaker",  title: "전환점",        survived: true,  social_memory: "이 사람 전과 후로 무언가가 달라졌다. 그것을 알아채는 데는 시간이 걸렸다",                   world_impact: "very_high" }
   };
 
   function clamp(value, min = -1, max = 1) {

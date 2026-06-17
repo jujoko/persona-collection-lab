@@ -241,7 +241,8 @@ function renderPrimaryResultLayout(simulation, developmentCards, dynamicRuns, en
           <div>
             <p class="eyebrow">Ending</p>
             <h2>${simulation.character.generated_name}: ${ending.title}</h2>
-            <p>${ending.social_memory}. 세계에 남긴 영향은 ${ending.world_impact}, 생존 여부는 ${ending.survived ? "생존" : "사망"}입니다.</p>
+            <p>${ending.social_memory}</p>
+            <p class="ending-meta">${ending.survived ? "생존" : "사망"} · 사회적 파장 ${({ low: "소", medium: "중", high: "대", very_high: "매우 큼" })[ending.world_impact] ?? ending.world_impact}</p>
           </div>
         </div>
         <div class="ending-badge">${ending.id}</div>
@@ -298,6 +299,116 @@ function getFormCharacter() {
   return character;
 }
 
+function seededPick(list, seed, salt) {
+  return list[PersonaEngine.hashText(`${seed}:${salt}`) % list.length];
+}
+
+function createBirthPrologue(character, promptInterpretation = {}) {
+  const seed = `${character.innate_seed || character.id || "birth"}|${character.prompt || ""}`;
+  const prompt = String(character.prompt || "");
+  const hasStrict = /엄격|규율|성적|기대|압박|통제/.test(prompt);
+  const hasWarm = /따뜻|사랑|돌봄|다정|안정|믿/.test(prompt);
+  const hasPoor = /가난|부족|빠듯|공장|일용|생계|빚/.test(prompt);
+  const hasRich = /부유|넉넉|전문직|사교육|유학|강남/.test(prompt);
+
+  const wealth = hasPoor
+    ? { key: "scarce", label: "빠듯한 집", bias: [-0.08, 0.08, -0.02, -0.04, 0.04, -0.02, 0.03, -0.05] }
+    : hasRich
+      ? { key: "comfortable", label: "여유 있는 집", bias: [0.02, -0.02, 0.03, 0.01, 0.08, 0.02, 0.04, 0.02] }
+      : seededPick([
+        { key: "modest", label: "빠듯하지만 무너지지 않는 집", bias: [-0.02, 0.03, 0, 0.02, 0.02, 0.02, 0.04, 0] },
+        { key: "middle", label: "평범한 중산층의 집", bias: [0.02, -0.02, 0.01, 0.03, 0.02, 0.02, 0.02, 0.02] },
+        { key: "unstable", label: "수입이 자주 흔들리는 집", bias: [-0.05, 0.08, -0.01, -0.02, 0.04, -0.02, 0.03, -0.04] }
+      ], seed, "wealth");
+
+  const parentStyle = hasStrict
+    ? { key: "achievement_pressure", label: "성취 압박형 부모", bias: [-0.03, 0.06, -0.05, -0.02, 0.1, 0.01, 0.08, -0.02] }
+    : hasWarm
+      ? { key: "warm_but_worried", label: "다정하지만 걱정이 많은 부모", bias: [0.08, -0.04, 0.01, 0.08, -0.01, 0.03, 0.02, 0.04] }
+      : seededPick([
+        { key: "quiet_distance", label: "말수가 적고 거리가 있는 부모", bias: [-0.02, 0.04, 0.02, -0.05, 0.02, -0.02, 0.02, -0.01] },
+        { key: "face_saving", label: "체면을 중요하게 여기는 부모", bias: [-0.02, 0.04, -0.02, -0.02, 0.08, 0.01, 0.07, -0.01] },
+        { key: "protective", label: "자주 감싸주지만 걱정이 많은 부모", bias: [0.07, 0.02, -0.01, 0.07, -0.02, 0.02, 0.02, 0.02] }
+      ], seed, "parent");
+
+  const homeMood = seededPick([
+    { key: "quiet_tension", label: "조용하지만 긴장된 집", bias: [-0.02, 0.06, -0.01, -0.02, 0.03, -0.01, 0.04, -0.02] },
+    { key: "busy_house", label: "늘 바쁘고 말이 끊기는 집", bias: [-0.03, 0.04, 0.02, -0.03, 0.02, -0.02, 0.02, -0.01] },
+    { key: "warm_noise", label: "시끄럽지만 온기가 있는 집", bias: [0.06, -0.02, 0.01, 0.08, 0, 0.02, 0.01, 0.03] },
+    { key: "polite_silence", label: "예의는 있지만 속마음을 숨기는 집", bias: [-0.01, 0.04, 0.01, -0.02, 0.05, 0.01, 0.05, 0] }
+  ], seed, "home");
+
+  const luck = seededPick([
+    { key: "good_teacher", label: "좋은 담임을 만남", bias: [0.04, -0.03, 0.03, 0.05, 0.02, 0.04, 0.01, 0.05] },
+    { key: "early_friend", label: "처음으로 편을 들어준 친구가 생김", bias: [0.06, -0.02, 0, 0.07, 0.01, 0.02, -0.01, 0.04] },
+    { key: "small_prize", label: "작은 상을 받고 인정받음", bias: [0.02, -0.01, 0.02, 0.01, 0.08, 0.01, 0.02, 0.02] },
+    { key: "quiet_talent", label: "혼자 잘하는 일을 발견함", bias: [0.01, -0.01, 0.04, 0, 0.06, 0.02, 0, 0.03] }
+  ], seed, "luck");
+
+  const misfortune = seededPick([
+    { key: "frequent_move", label: "이사를 자주 다님", bias: [-0.03, 0.06, 0.02, -0.04, 0.02, -0.01, -0.02, -0.02] },
+    { key: "parent_layoff", label: "집안 수입이 한 번 크게 흔들림", bias: [-0.04, 0.07, -0.01, -0.03, 0.03, -0.02, 0.04, -0.04] },
+    { key: "lonely_class", label: "반에서 오래 겉돎", bias: [-0.04, 0.05, 0.02, -0.05, 0.03, -0.02, -0.03, -0.01] },
+    { key: "unfair_blame", label: "억울한 일로 혼난 기억이 남음", bias: [-0.02, 0.05, 0.05, -0.02, 0.03, 0.02, -0.03, 0.04] }
+  ], seed, "misfortune");
+
+  const bias = wealth.bias.map((_, index) => Number((
+    wealth.bias[index] + parentStyle.bias[index] + homeMood.bias[index] + luck.bias[index] + misfortune.bias[index]
+  ).toFixed(4)));
+
+  const name = character.generated_name || "이 아이";
+  const topicName = `${name}${particle(name, "은", "는")}`;
+  const subjectName = `${name}${particle(name, "이", "가")}`;
+  const luckScene = {
+    good_teacher: "어느 해에는 아이의 말을 끝까지 들어주는 담임을 만났다",
+    early_friend: "처음으로 자기 편을 들어주는 친구가 생겼다",
+    small_prize: "작은 상장을 받은 날, 어른들이 드물게 환하게 웃어주었다",
+    quiet_talent: "혼자 몰두할 수 있는 재능 하나를 발견했다"
+  }[luck.key] || luck.label;
+  const misfortuneScene = {
+    frequent_move: "몇 번의 이사 때문에 익숙해질 만하면 다시 낯선 곳에 놓였다",
+    parent_layoff: "집안 수입이 한 번 크게 흔들리며 어른들의 한숨이 늘었다",
+    lonely_class: "한동안 반에서 자연스럽게 섞이지 못하고 겉돌았다",
+    unfair_blame: "하지 않은 일로 혼난 기억이 오래 남았다"
+  }[misfortune.key] || misfortune.label;
+  const fragments = promptInterpretation.prompt_fragments || [];
+  const promptEcho = fragments[0] ? `입력된 페르소나에서 특히 "${fragments[0]}"라는 흔적이 이 배경과 맞물린다.` : "";
+  const paragraphs = [
+    `${topicName} ${wealth.label}에서 태어났다. 집에는 ${homeMood.label} 특유의 공기가 있었고, 어른들의 말투는 아이가 세상을 읽는 첫 문장이 되었다.`,
+    `부모는 ${parentStyle.label}에 가까웠다. 그래서 ${topicName} 사랑받는 법보다 먼저, 어떤 표정을 지어야 안전한지와 언제 조용히 있어야 하는지를 배웠다.`,
+    `하지만 시작 조건이 전부 불운했던 것은 아니다. ${luckScene}. 그 작은 장면은 오래 남아, 아이가 무너질 때마다 희미하게 돌아오는 손잡이가 된다.`,
+    `반대로 ${misfortuneScene}. 이 일은 ${subjectName} 세상이 늘 공정하게 설명되지는 않는다는 감각을 갖게 했다. ${promptEcho}`
+  ].filter(Boolean);
+
+  return {
+    title: `${name}의 프롤로그`,
+    subtitle: "태어난 환경과 우연히 주어진 조건",
+    variables: { wealth, parentStyle, homeMood, luck, misfortune },
+    latent_bias: bias,
+    paragraphs
+  };
+}
+
+function applyBirthLatentBias(latent, prologue) {
+  const bias = prologue?.latent_bias || [];
+  return latent.map((value, index) => {
+    const next = value + (bias[index] || 0);
+    return Math.max(-1, Math.min(1, Number(next.toFixed(4))));
+  });
+}
+
+function hasFinalConsonant(text) {
+  const char = String(text || "").trim().at(-1);
+  if (!char) return false;
+  const code = char.charCodeAt(0);
+  if (code < 0xac00 || code > 0xd7a3) return false;
+  return (code - 0xac00) % 28 !== 0;
+}
+
+function particle(text, withFinal, withoutFinal) {
+  return hasFinalConsonant(text) ? withFinal : withoutFinal;
+}
+
 async function runSimulation(character) {
   submitBtn.disabled = true;
   const originalSubmitText = submitBtn.textContent;
@@ -341,10 +452,16 @@ async function runSimulationWithM2(character, neuralModel) {
   const { structurePrior, promptInterpretation, infantLatent } =
     PersonaEngine.buildSimulationContext(character, neuralModel);
 
-  let latent = [...infantLatent];
+  const birthPrologue = createBirthPrologue(character, promptInterpretation);
+  let latent = applyBirthLatentBias([...infantLatent], birthPrologue);
   const developmentalLogs = [];
   const innateDevelopmentProfile = promptInterpretation.innate_development_profile;
-  const developmentLabels = []; // Growth 결과 레이블 (World 프롬프트용)
+  const developmentLabels = [
+    `출생 배경: ${birthPrologue.variables.wealth.label}`,
+    `부모 성향: ${birthPrologue.variables.parentStyle.label}`,
+    `초기 행운: ${birthPrologue.variables.luck.label}`,
+    `초기 불운: ${birthPrologue.variables.misfortune.label}`
+  ]; // Growth 결과 레이블 (World 프롬프트용)
 
   // ── Growth Phase ────────────────────────────────────────────────────────────
   for (const event of PersonaEngine.DEVELOPMENT_EVENTS) {
@@ -446,6 +563,7 @@ async function runSimulationWithM2(character, neuralModel) {
     persona_structure_prior: structurePrior,
     prompt_interpretation: promptInterpretation,
     infant_latent_persona: infantLatent,
+    birth_prologue: birthPrologue,
     developmental_logs: developmentalLogs,
     persona_card: personaCard,
     latent_persona: latent,
@@ -640,6 +758,7 @@ function ensureGameplayState(simulation) {
   simulation.gameplay = {
     currentIndex,
     predictions,
+    prologue_seen: Boolean(existing.prologue_seen),
     score: predictions.reduce((sum, item) => sum + (item.points || 0), 0),
     streak: computeCurrentStreak(predictions),
     completed: currentIndex >= simulation.events.length
@@ -1085,6 +1204,106 @@ actionReading = function cleanActionReading(action, simulation, currentEvent = n
   };
 };
 
+function renderBirthProloguePanel(simulation) {
+  const prologue = simulation.birth_prologue;
+  if (!prologue) return "";
+  const variableChips = [
+    prologue.variables.wealth.label,
+    prologue.variables.parentStyle.label,
+    prologue.variables.homeMood.label,
+    prologue.variables.luck.label,
+    prologue.variables.misfortune.label
+  ];
+  return `
+    <article class="prologue-card">
+      <div class="prologue-head">
+        <div>
+          <p class="eyebrow">Prologue · 이번 생의 시작 조건</p>
+          <h3>${prologue.title}</h3>
+          <p>${prologue.subtitle}</p>
+        </div>
+        ${renderAvatar(simulation, "small")}
+      </div>
+      <div class="prologue-story">
+        ${prologue.paragraphs.map(text => `<p>${text}</p>`).join("")}
+      </div>
+      <div class="prologue-chips">
+        ${variableChips.map(label => `<span>${label}</span>`).join("")}
+      </div>
+      <button type="button" class="primary-action" data-start-events-for="${simulation.character_id}">
+        프롤로그를 넘기고 첫 사건 보기
+      </button>
+    </article>
+  `;
+}
+
+function renderCharacterDrawer(simulation) {
+  return `
+    <details class="character-drawer">
+      <summary>
+        <span>
+          <b>캐릭터창</b>
+          <small>현재 페르소나 요약과 예측 힌트를 보고 싶을 때만 열어보세요.</small>
+        </span>
+      </summary>
+      <div class="drawer-content">
+        ${renderPersonaBrief(simulation)}
+      </div>
+    </details>
+  `;
+}
+
+renderPrimaryResultLayout = function prologueFirstResultLayout(simulation, developmentCards, dynamicRuns, ending) {
+  const showPrologue = simulation.birth_prologue && !simulation.gameplay.prologue_seen;
+  return `
+    ${showPrologue ? `
+      <div class="result-section-title primary-section-title">
+        <p class="eyebrow">Step 2 · Prologue</p>
+        <h3>먼저 이 사람이 어떤 시작 조건을 타고났는지 읽어보세요</h3>
+      </div>
+      ${renderBirthProloguePanel(simulation)}
+    ` : `
+      <div class="result-section-title primary-section-title">
+        <p class="eyebrow">Step 3 · 현재 사건</p>
+        <h3>이제 이 캐릭터가 다음 장면에서 어떤 선택을 할지 예측하세요</h3>
+        <p class="section-help">현재 사건은 캐릭터가 살아가며 마주치는 장면입니다. 선택지는 플레이어의 선택이 아니라, “이 사람이라면 무엇을 할까?”를 맞히는 예측입니다.</p>
+      </div>
+      ${renderPredictionPanel(simulation)}
+    `}
+    ${renderCharacterDrawer(simulation)}
+    ${!showPrologue ? renderRevealedEvents(simulation) : ""}
+    ${!showPrologue ? renderGameSummary(simulation) : ""}
+    ${simulation.gameplay.completed ? `
+      <article class="result-card dynamic-control-card">
+        <div>
+          <div class="result-meta">
+            <span>Dynamic</span>
+            <span>Feedback Loop</span>
+          </div>
+          <strong>피드백 반영 후 다시 시뮬레이션</strong>
+        </div>
+        <p>피드백으로 바뀐 현재 잠재 구조를 사용해 같은 캐릭터의 후속 경로를 다시 실행합니다.</p>
+        <button type="button" class="primary-action" data-rerun-character-id="${simulation.character_id}">현재 페르소나로 다시 실행</button>
+      </article>
+    ` : ""}
+    ${dynamicRuns}
+    ${simulation.gameplay.completed ? `
+      <article class="ending-card">
+        <div class="ending-copy">
+          ${renderAvatar(simulation, "small")}
+          <div>
+            <p class="eyebrow">Ending</p>
+            <h2>${simulation.character.generated_name}: ${ending.title}</h2>
+            <p>${ending.social_memory}</p>
+            <p class="ending-meta">${ending.survived ? "생존" : "사망"} · 사회적 파장 ${({ low: "소", medium: "중", high: "대", very_high: "매우 큼" })[ending.world_impact] ?? ending.world_impact}</p>
+          </div>
+        </div>
+        <div class="ending-badge">${ending.id}</div>
+      </article>
+    ` : ""}
+  `;
+};
+
 function renderDynamicRun(simulation, run) {
   const originalById = Object.fromEntries(simulation.baseline_events.map(event => [event.event_id, event]));
   const changeRows = run.events.map(event => {
@@ -1305,6 +1524,17 @@ form.addEventListener("submit", async event => {
 });
 
 resultList.addEventListener("click", event => {
+  const startEventsButton = event.target.closest("[data-start-events-for]");
+  if (startEventsButton) {
+    const simulation = findSimulation(startEventsButton.dataset.startEventsFor);
+    if (!simulation) return;
+    ensureGameplayState(simulation);
+    simulation.gameplay.prologue_seen = true;
+    renderSimulation(simulation);
+    saveState();
+    return;
+  }
+
   const predictionButton = event.target.closest("[data-predict-character-id]");
   if (predictionButton) {
     const simulation = findSimulation(predictionButton.dataset.predictCharacterId);
