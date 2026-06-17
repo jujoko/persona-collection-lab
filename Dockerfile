@@ -47,6 +47,7 @@ RUN node --input-type=module -e "import { env, pipeline } from '@huggingface/tra
 # ── 소스 복사 ──────────────────────────────────────────────────────────
 COPY src/       ./src/
 COPY public/    ./public/
+COPY content/   ./content/
 COPY ml/        ./ml/
 
 # ── 포트 ──────────────────────────────────────────────────────────────
