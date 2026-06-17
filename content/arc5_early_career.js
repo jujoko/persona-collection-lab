@@ -427,9 +427,9 @@ const ARC5_EARLY_CAREER = {
       ]
     },
 
-    // ── ME022: 선배의 방식 (신입 관행 딜레마) ─────────────────────────────────
+    // ── E513: 선배의 방식 (신입 관행 딜레마) ─────────────────────────────────
     {
-      id: "ME022",
+      id: "E513",
       arc: "arc5",
       title: "선배의 방식",
       type: "generational_workplace_conflict",
@@ -475,9 +475,9 @@ const ARC5_EARLY_CAREER = {
       ]
     },
 
-    // ── ME019: 동료의 보고서 (동료 실수 딜레마) ───────────────────────────────
+    // ── E514: 동료의 보고서 (동료 실수 딜레마) ───────────────────────────────
     {
-      id: "ME019",
+      id: "E514",
       arc: "arc5",
       title: "동료의 보고서",
       type: "colleague_mistake_dilemma",
@@ -522,9 +522,9 @@ const ARC5_EARLY_CAREER = {
       ]
     },
 
-    // ── ME001: 내부 고발 (E509 발견 이후 결단) ────────────────────────────────
+    // ── E515: 내부 고발 (E509 발견 이후 결단) ────────────────────────────────
     {
-      id: "ME001",
+      id: "E515",
       arc: "arc5",
       title: "내부 고발",
       type: "whistleblowing_dilemma",
@@ -570,9 +570,9 @@ const ARC5_EARLY_CAREER = {
       ]
     },
 
-    // ── ME005: 조직의 압력 (허위 보고서 지시) ─────────────────────────────────
+    // ── E516: 조직의 압력 (허위 보고서 지시) ─────────────────────────────────
     {
-      id: "ME005",
+      id: "E516",
       arc: "arc5",
       title: "조직의 압력",
       type: "authority_vs_conscience",
@@ -616,9 +616,9 @@ const ARC5_EARLY_CAREER = {
       ]
     },
 
-    // ── ME006: 친구의 부탁 (채용 추천 딜레마) ─────────────────────────────────
+    // ── E517: 친구의 부탁 (채용 추천 딜레마) ─────────────────────────────────
     {
-      id: "ME006",
+      id: "E517",
       arc: "arc5",
       title: "친구의 부탁",
       type: "friendship_vs_integrity",
@@ -661,9 +661,9 @@ const ARC5_EARLY_CAREER = {
       ]
     },
 
-    // ── ME011: 증인이 되어달라는 요청 ────────────────────────────────────────
+    // ── E518: 증인이 되어달라는 요청 ────────────────────────────────────────
     {
-      id: "ME011",
+      id: "E518",
       arc: "arc5",
       title: "증인이 되어달라는 요청",
       type: "workplace_harassment_witness",
@@ -710,9 +710,9 @@ const ARC5_EARLY_CAREER = {
       ]
     },
 
-    // ── ME012: 박 과장이 돌아왔다 [requires: testified_against_park] ──────────
+    // ── E519: 박 과장이 돌아왔다 [requires: testified_against_park] ──────────
     {
-      id: "ME012",
+      id: "E519",
       arc: "arc5",
       title: "박 과장이 돌아왔다",
       type: "retaliation_after_testimony",
@@ -757,9 +757,9 @@ const ARC5_EARLY_CAREER = {
       ]
     },
 
-    // ── ME013: 후배의 메시지 [requires: denied_testimony] ─────────────────────
+    // ── E520: 후배의 메시지 [requires: denied_testimony] ─────────────────────
     {
-      id: "ME013",
+      id: "E520",
       arc: "arc5",
       title: "후배의 메시지",
       type: "consequence_of_silence",
@@ -886,9 +886,9 @@ const ARC5_EARLY_CAREER = {
       ]
     },
 
-    // ── ME015: K의 합류 제안 ─────────────────────────────────────────────────
+    // ── E521: K의 합류 제안 ─────────────────────────────────────────────────
     {
-      id: "ME015",
+      id: "E521",
       arc: "arc5",
       title: "K의 합류 제안",
       type: "startup_offer_with_known_risk",
